@@ -631,6 +631,14 @@ base semeada, cujas chaves são curtas e legíveis (`trn-14`, `jog-3`).
 Entrar e cadastrar são a mesma tela: quem chega não sabe dizer se já tem conta, e
 dois caminhos separados só produzem a escolha errada e um erro logo depois.
 
+**O acesso existe em três lugares, e nenhum deles é opcional.** As boas-vindas
+oferecem "já tenho conta" ao lado das duas bases; a barra lateral tem o controle
+no computador; e a barra inferior tem o sétimo destino no celular. Faltava
+justamente o caminho do celular — o controle de conta vivia só na barra lateral,
+que é `hidden lg:flex` —, então quem já tinha conta e abria o Oblix no telefone
+**nunca alcançava os próprios dados**. Num app usado dentro do clube, o aparelho
+sem acesso era o principal.
+
 O que já estava no navegador é **oferecido, não engolido**. A ordem natural de
 uso é ao contrário da técnica — a pessoa experimenta, registra alguns torneios e
 só então cria conta. Subir tudo sozinho seria decidir por ela o que fazer com

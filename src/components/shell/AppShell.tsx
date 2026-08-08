@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { Conta } from "@/components/conta/Conta";
+import { Conta, ContaCompacta } from "@/components/conta/Conta";
 import { BemVindo, type Etapa } from "@/components/onboarding/BemVindo";
 import { Instalar } from "@/components/shell/Instalar";
 import { Logotipo } from "@/components/shell/Marca";
@@ -186,6 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around gap-1 border-t border-hairline bg-plane/85 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden"
       >
         <Itens compacto />
+        <ContaCompacta />
       </nav>
 
       {boasVindas && (

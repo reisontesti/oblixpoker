@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Marca } from "@/components/shell/Marca";
 import { CampoEscolha, CampoNumero, CampoTexto } from "@/components/ui/Campo";
 import { comecarDoZero, usarDemonstracao } from "@/lib/data/repositorio";
+import { FormularioAcesso } from "@/components/conta/Conta";
+import { supabaseConfigurado } from "@/lib/supabase/cliente";
 import { moeda } from "@/lib/format";
 import type { Modalidade, Objetivo, Perfil } from "@/lib/types";
 
@@ -38,7 +40,7 @@ const MODALIDADES: { valor: Modalidade; rotulo: string }[] = [
   { valor: "Home Game", rotulo: "Home Game" },
 ];
 
-export type Etapa = "escolha" | "perfil";
+export type Etapa = "escolha" | "perfil" | "entrar";
 
 interface Props {
   /** "perfil" quando o jogador já decidiu e só falta se apresentar. */
@@ -165,9 +167,39 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
                 />
               </div>
 
-              <p className="mt-7 text-[12px] leading-relaxed text-ink-muted">
-                Tudo fica gravado neste navegador. Não há conta, servidor nem cobrança.
+              {/* Quem já tem conta precisa de uma saída aqui. Sem ela, a
+                  primeira visita obrigava a escolher demonstração ou começar do
+                  zero antes de conseguir entrar — e no celular, onde a barra
+                  lateral não existe, não havia saída nenhuma. Fica discreto
+                  porque é o caminho de quem volta, não o de quem chega. */}
+              {supabaseConfigurado && (
+                <button
+                  type="button"
+                  onClick={() => setEtapa("entrar")}
+                  className="mt-6 w-full cursor-pointer text-[12.5px] text-ink-secondary transition-colors duration-200 hover:text-ink"
+                >
+                  Já tenho conta — <span className="font-medium text-ink">entrar</span>
+                </button>
+              )}
+
+              <p className="mt-6 text-[12px] leading-relaxed text-ink-muted">
+                {supabaseConfigurado
+                  ? "Sem conta, tudo fica gravado neste navegador. Com conta, os seus registros existem em qualquer aparelho."
+                  : "Tudo fica gravado neste navegador. Não há conta, servidor nem cobrança."}
               </p>
+            </>
+          ) : etapa === "entrar" ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setEtapa("escolha")}
+                className="cursor-pointer text-[12.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
+              >
+                ← Voltar
+              </button>
+              <div className="mt-1">
+                <FormularioAcesso />
+              </div>
             </>
           ) : (
             <>

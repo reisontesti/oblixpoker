@@ -31,6 +31,56 @@ import { useRegistros } from "@/lib/painel";
  * e só então cria conta. Subir tudo sozinho seria decidir por ela o que fazer
  * com dados que talvez fossem só teste.
  */
+/**
+ * O acesso à conta na barra inferior do celular.
+ *
+ * A barra lateral — onde o controle de conta morava — é `hidden lg:flex`, então
+ * no telefone ele simplesmente não existia. Como o Oblix é usado no celular
+ * dentro do clube, isso deixava a conta inalcançável justamente no aparelho
+ * principal. Aqui ele vira o sétimo destino, com o mesmo ponto de estado da
+ * versão de mesa: cor da sincronização de relance, sem texto extra.
+ */
+export function ContaCompacta() {
+  const { usuario, comNuvem, sincronizando, pendentes, online } = useRegistros();
+  const [aberto, setAberto] = useState(false);
+
+  if (!comNuvem) return null;
+
+  const cor = !usuario
+    ? "var(--color-ink-faint)"
+    : !online
+      ? "var(--color-negativo)"
+      : sincronizando || pendentes > 0
+        ? "var(--color-atencao)"
+        : "var(--color-positivo)";
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        aria-label={usuario ? `Conta de ${usuario.email}` : "Entrar na minha conta"}
+        className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-ink-secondary transition-colors duration-200 hover:bg-white/4 hover:text-ink"
+      >
+        <span aria-hidden className="relative grid size-[18px] place-items-center">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <circle cx="12" cy="8" r="3.4" />
+            <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" strokeLinecap="round" />
+          </svg>
+          <span
+            aria-hidden
+            className="absolute -top-0.5 -right-0.5 size-[7px] rounded-full ring-2 ring-[var(--color-plane)]"
+            style={{ background: cor }}
+          />
+        </span>
+        <span className="text-[9.5px] font-medium">Conta</span>
+      </button>
+
+      {aberto && <PainelConta aoFechar={() => setAberto(false)} />}
+    </>
+  );
+}
+
 export function Conta() {
   const { usuario, comNuvem, sincronizando, pendentes, online } = useRegistros();
   const [aberto, setAberto] = useState(false);
@@ -83,12 +133,12 @@ export function Conta() {
         </button>
       )}
 
-      {aberto && <Painel aoFechar={() => setAberto(false)} />}
+      {aberto && <PainelConta aoFechar={() => setAberto(false)} />}
     </>
   );
 }
 
-function Painel({ aoFechar }: { aoFechar: () => void }) {
+export function PainelConta({ aoFechar }: { aoFechar: () => void }) {
   const { usuario } = useRegistros();
 
   useEffect(() => {
@@ -123,14 +173,23 @@ function Painel({ aoFechar }: { aoFechar: () => void }) {
         </button>
 
         <div className="relative">
-          {usuario ? <Conectado aoFechar={aoFechar} /> : <Formulario />}
+          {usuario ? <Conectado aoFechar={aoFechar} /> : <FormularioAcesso />}
         </div>
       </div>
     </div>
   );
 }
 
-function Formulario() {
+/**
+ * Entrar ou criar conta.
+ *
+ * Exportado porque precisa existir em dois lugares: no painel de conta e nas
+ * BOAS-VINDAS. Sem ele lá, quem já tinha conta não tinha como chegar aos
+ * próprios dados na primeira visita — e no celular não tinha como chegar
+ * nunca, porque o controle de conta só existia na barra lateral, que some
+ * abaixo de `lg`.
+ */
+export function FormularioAcesso() {
   const [modo, setModo] = useState<"entrar" | "cadastrar">("entrar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
