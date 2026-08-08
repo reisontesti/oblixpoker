@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { Conta } from "@/components/conta/Conta";
 import { BemVindo, type Etapa } from "@/components/onboarding/BemVindo";
 import { Logotipo } from "@/components/shell/Marca";
 import { NAVEGACAO } from "@/components/shell/navegacao";
@@ -139,6 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </span>
           </div>
+          <Conta />
         </div>
       </aside>
 

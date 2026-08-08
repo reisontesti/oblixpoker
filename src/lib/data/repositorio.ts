@@ -11,6 +11,16 @@ import {
   TORNEIOS,
 } from "@/lib/data/seed";
 import { CHAVES_META } from "@/lib/types";
+import { obterSupabase, supabaseConfigurado } from "@/lib/supabase/cliente";
+import * as nuvem from "@/lib/data/nuvem";
+import {
+  diarioParaLinha,
+  medicaoParaLinha,
+  metaParaLinha,
+  movimentoParaLinha,
+  sateliteParaLinha,
+  torneioParaLinha,
+} from "@/lib/data/mapa";
 import type {
   ChaveMeta,
   DiarioMental,
@@ -80,6 +90,11 @@ export interface Registros {
   metas: Record<string, MetaDefinida>;
 }
 
+export interface Sessao {
+  id: string;
+  email: string;
+}
+
 export interface Conta {
   modo: ModoBase;
   /** Só existe no modo próprio; na demonstração o perfil vem da base semeada. */
@@ -118,6 +133,16 @@ export interface Estado extends Omit<Registros, "jogadores" | "metas"> {
    * dados? Só significa alguma coisa depois de `pronto`.
    */
   decidiu: boolean;
+  /**
+   * A conta do Supabase, quando há uma. Nula significa que os dados próprios
+   * moram só neste navegador — que continua sendo um modo de uso legítimo, e
+   * não um estado degradado.
+   */
+  sessao: Sessao | null;
+  /** Há projeto Supabase configurado? Sem isso, nada de conta aparece. */
+  comNuvem: boolean;
+  /** Carregando a base da nuvem agora. */
+  sincronizando: boolean;
   /** Quantos torneios vieram do jogador, e não da base de demonstração. */
   proprios: number;
   /**
@@ -201,6 +226,14 @@ function diaLocalDe(data: Date): string {
   return `${data.getFullYear()}-${mes}-${dia}`;
 }
 
+// Declarados aqui, e não junto do resto do estado mutável mais abaixo, porque
+// `montar()` os lê — e `montar()` é chamado no topo do módulo para construir o
+// instantâneo do servidor. Um `let` declarado depois dessa chamada cairia na
+// zona morta temporal e o build quebraria só na pré-renderização.
+let conta: Conta = CONTA_INICIAL;
+let sessao: Sessao | null = null;
+let sincronizando = false;
+
 function montar(
   locais: Registros,
   conta: Conta,
@@ -211,6 +244,9 @@ function montar(
   const base = baseDe(conta.modo);
   return {
     modo: conta.modo,
+    sessao,
+    comNuvem: supabaseConfigurado,
+    sincronizando,
     pronto,
     decidiu,
     diaCorrente,
@@ -252,7 +288,6 @@ function resolverMetas(
 /** Instantâneo do servidor: imutável e sempre a mesma referência. */
 const ESTADO_SERVIDOR: Estado = montar(vazio, CONTA_INICIAL, false, false, null);
 
-let conta: Conta = CONTA_INICIAL;
 let decidiu = false;
 let locais: Registros = vazio;
 let diaCorrente: string | null = null;
@@ -303,6 +338,24 @@ function gravar() {
   }
 }
 
+/**
+ * Onde uma alteração é gravada.
+ *
+ * Logado e nos dados próprios, vai para o Postgres; caso contrário, para o
+ * localStorage. A escrita na nuvem é disparada sem espera de propósito: a
+ * memória já mudou e a tela já mostra o novo estado. Poker se anota no celular,
+ * dentro do clube, com sinal ruim — travar a interface esperando um POST seria
+ * o pior desenho possível, e o erro, se vier, aparece como aviso em vez de
+ * perder o que a pessoa digitou.
+ */
+function persistir(naNuvem?: () => Promise<unknown>) {
+  if (sessao && conta.modo === "proprio" && naNuvem) {
+    void naNuvem();
+    return;
+  }
+  gravar();
+}
+
 function gravarConta() {
   if (typeof window === "undefined") return;
   try {
@@ -338,6 +391,10 @@ export function assinar(ouvinte: () => void): () => void {
     // Sempre avisa, mesmo sem registros locais: o dia corrente sozinho já é
     // uma diferença em relação ao instantâneo do servidor.
     avisar();
+    // A sessão do Supabase chega depois, sem bloquear o primeiro render: o
+    // painel aparece com o que já está neste navegador e é substituído pelo da
+    // conta quando ela responde.
+    void recuperarSessao();
   }
   return () => ouvintes.delete(ouvinte);
 }
@@ -377,14 +434,14 @@ export function comecarDoZero(perfil: Perfil, bancaInicial: number) {
   locais = ler("proprio");
   decidiu = true;
 
-  const jaTemAbertura = locais.movimentos.some((m) => m.id === "mov-abertura");
+  const jaTemAbertura = locais.movimentos.some((m) => m.descricao === "Banca inicial");
   if (bancaInicial > 0 && !jaTemAbertura) {
     locais = {
       ...locais,
       movimentos: [
         ...locais.movimentos,
         {
-          id: "mov-abertura",
+          id: crypto.randomUUID(),
           data: new Date().toISOString(),
           tipo: "aporte",
           valor: bancaInicial,
@@ -395,7 +452,12 @@ export function comecarDoZero(perfil: Perfil, bancaInicial: number) {
   }
 
   gravarConta();
-  gravar();
+  persistir(async () => {
+    const u = sessao?.id ?? "";
+    if (conta.perfil) await nuvem.salvarPerfil(conta.perfil, u);
+    const abertura = locais.movimentos.find((m) => m.descricao === "Banca inicial");
+    if (abertura) await nuvem.gravar("movimentos", movimentoParaLinha(abertura, u), "a banca inicial");
+  });
   avisar();
 }
 
@@ -403,8 +465,136 @@ export function atualizarPerfil(perfil: Perfil) {
   if (conta.modo !== "proprio") return;
   conta = { ...conta, perfil };
   gravarConta();
+  if (sessao) void nuvem.salvarPerfil(perfil, sessao.id);
   avisar();
 }
+
+// ── conta na nuvem ─────────────────────────────────────────────────────────
+
+/**
+ * Puxa a base do Postgres para a memória e passa a operar em cima dela.
+ *
+ * Entrar na conta implica estar nos dados próprios: os números da nuvem são os
+ * do jogador, e deixá-lo logado olhando a demonstração seria mostrar dados de
+ * mentira para quem acabou de pedir os dele.
+ */
+async function adotarSessao(nova: Sessao) {
+  sessao = nova;
+  sincronizando = true;
+  conta = { ...conta, modo: "proprio" };
+  decidiu = true;
+  gravarConta();
+  avisar();
+
+  const base = await nuvem.carregarDaNuvem();
+  if (base) {
+    locais = base.registros;
+    if (base.perfil) {
+      conta = { ...conta, perfil: base.perfil };
+      gravarConta();
+    }
+  }
+  sincronizando = false;
+  avisar();
+}
+
+export interface ResultadoAuth {
+  erro: string | null;
+  /** Cadastro que ficou pendente de confirmação por e-mail. */
+  confirmar?: boolean;
+}
+
+const TRADUZIR: Record<string, string> = {
+  "Invalid login credentials": "E-mail ou senha incorretos.",
+  "User already registered": "Já existe uma conta com este e-mail. Tente entrar.",
+  "Password should be at least 6 characters": "A senha precisa ter ao menos 6 caracteres.",
+  "Email not confirmed": "Confirme o e-mail que enviamos antes de entrar.",
+};
+
+const traduzir = (m: string) => TRADUZIR[m] ?? m;
+
+export async function entrar(email: string, senha: string): Promise<ResultadoAuth> {
+  const sb = obterSupabase();
+  if (!sb) return { erro: "Este Oblix não está ligado a nenhum projeto." };
+
+  const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password: senha });
+  if (error) return { erro: traduzir(error.message) };
+  if (!data.user) return { erro: "Não consegui entrar. Tente de novo." };
+
+  await adotarSessao({ id: data.user.id, email: data.user.email ?? email });
+  return { erro: null };
+}
+
+export async function cadastrar(email: string, senha: string): Promise<ResultadoAuth> {
+  const sb = obterSupabase();
+  if (!sb) return { erro: "Este Oblix não está ligado a nenhum projeto." };
+
+  const { data, error } = await sb.auth.signUp({ email: email.trim(), password: senha });
+  if (error) return { erro: traduzir(error.message) };
+
+  // Sem sessão de volta quer dizer que o projeto exige confirmação por e-mail.
+  // É um estado normal, não erro: a interface precisa dizer isso em vez de
+  // deixar a pessoa achando que o cadastro falhou.
+  if (!data.session || !data.user) return { erro: null, confirmar: true };
+
+  await adotarSessao({ id: data.user.id, email: data.user.email ?? email });
+  return { erro: null };
+}
+
+/**
+ * Sai da conta e devolve o painel ao que existe neste navegador.
+ *
+ * Nada do que estava na nuvem fica em memória: o próximo login busca de novo.
+ * Manter um resquício seria pior do que buscar duas vezes — num aparelho
+ * compartilhado, o jogador seguinte veria os números do anterior.
+ */
+export async function sair() {
+  await obterSupabase()?.auth.signOut();
+  sessao = null;
+  locais = ler("proprio");
+  avisar();
+}
+
+/** Restaura a sessão guardada pelo Supabase, no carregamento da página. */
+async function recuperarSessao() {
+  const sb = obterSupabase();
+  if (!sb) return;
+  const { data } = await sb.auth.getSession();
+  const u = data.session?.user;
+  if (u) await adotarSessao({ id: u.id, email: u.email ?? "" });
+}
+
+/**
+ * Sobe para a conta o que já estava neste navegador.
+ *
+ * Vale a pena existir porque a ordem natural de uso é ao contrário da ordem
+ * técnica: a pessoa experimenta o Oblix, registra alguns torneios e só então
+ * decide criar conta. Perder esses registros no login seria punir justamente
+ * quem se convenceu.
+ */
+export async function migrarLocaisParaNuvem(): Promise<string | null> {
+  if (!sessao) return "Você não está em nenhuma conta.";
+  const guardados = ler("proprio");
+  if (!guardados.torneios.length && !Object.keys(guardados.jogadores).length) {
+    return "Não há nada neste navegador para subir.";
+  }
+
+  const erro = await nuvem.migrarParaNuvem(guardados, sessao.id);
+  if (erro) return erro;
+
+  const base = await nuvem.carregarDaNuvem();
+  if (base) locais = base.registros;
+  avisar();
+  return null;
+}
+
+/** Quantos registros locais esperam por uma conta. */
+export function contarLocaisPendentes(): number {
+  const g = ler("proprio");
+  return g.torneios.length + g.diario.length + Object.keys(g.jogadores).length;
+}
+
+export const definirTratadorDeFalha = nuvem.definirTratadorDeFalha;
 
 // ── escrita ────────────────────────────────────────────────────────────────
 
@@ -419,11 +609,11 @@ export interface EntradaRegistro {
  * permite comparar as duas vias de entrada depois.
  */
 export function registrar(entrada: EntradaRegistro): Torneio {
-  const idTorneio = `trn-local-${crypto.randomUUID().slice(0, 8)}`;
+  const idTorneio = crypto.randomUUID();
   let idSatelite: string | null = null;
 
   if (entrada.satelite) {
-    idSatelite = `sat-local-${crypto.randomUUID().slice(0, 8)}`;
+    idSatelite = crypto.randomUUID();
     locais = {
       ...locais,
       satelites: [
@@ -447,7 +637,15 @@ export function registrar(entrada: EntradaRegistro): Torneio {
   };
 
   locais = { ...locais, torneios: [...locais.torneios, torneio] };
-  gravar();
+  // Satélite antes do torneio: é o torneio que aponta para ele, e a chave
+  // estrangeira recusaria a ordem inversa.
+  persistir(async () => {
+    const u = sessao?.id ?? "";
+    const sat = idSatelite ? locais.satelites.find((x) => x.id === idSatelite) : null;
+    if (sat) await nuvem.gravar("satelites", { ...sateliteParaLinha(sat, u), torneio_id: null }, "o satélite");
+    await nuvem.gravar("torneios", torneioParaLinha(torneio, u), "o torneio");
+    if (sat?.torneioId) await nuvem.gravar("satelites", sateliteParaLinha(sat, u), "o vínculo do satélite");
+  });
   avisar();
   return torneio;
 }
@@ -458,7 +656,10 @@ export function remover(idTorneio: string) {
     torneios: locais.torneios.filter((t) => t.id !== idTorneio),
     satelites: locais.satelites.filter((s) => s.torneioId !== idTorneio),
   };
-  gravar();
+  persistir(async () => {
+    await nuvem.apagar("satelites", "torneio_id", idTorneio, "o satélite");
+    await nuvem.apagar("torneios", "id", idTorneio, "o torneio");
+  });
   avisar();
 }
 
@@ -469,18 +670,30 @@ export function limparProprios() {
   avisar();
 }
 
-export const ehRegistroProprio = (id: string) => id.includes("-local-");
+/**
+ * Distingue o que o jogador criou do que veio da base semeada.
+ *
+ * O critério é o formato do id: tudo que ele cria é UUID, e a demonstração usa
+ * chaves curtas e legíveis (`trn-14`, `jog-3`). Não é convenção gratuita — as
+ * chaves primárias no Postgres são `uuid`, então um id no formato antigo
+ * (`trn-local-a1b2c3d4`) seria recusado pelo banco na hora de migrar. Um
+ * formato só, válido nos dois lados, elimina a tradução de ids na travessia.
+ */
+const FORMATO_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const ehRegistroProprio = (id: string) => FORMATO_UUID.test(id);
 
 // ── banco de adversários ───────────────────────────────────────────────────
 
-export const novoIdJogador = () => `jog-local-${crypto.randomUUID().slice(0, 8)}`;
+export const novoIdJogador = () => crypto.randomUUID();
 
 export function salvarJogador(jogador: Jogador) {
   locais = {
     ...locais,
     jogadores: { ...locais.jogadores, [jogador.id]: jogador },
   };
-  gravar();
+  persistir(() => nuvem.gravarJogador(jogador, sessao?.id ?? ""));
   avisar();
 }
 
@@ -499,7 +712,7 @@ export function adicionarNota(idJogador: string, tipo: NotaJogador["tipo"], text
 
   const agora = new Date().toISOString();
   const nota: NotaJogador = {
-    id: `nota-${crypto.randomUUID().slice(0, 8)}`,
+    id: crypto.randomUUID(),
     data: agora,
     tipo,
     texto: texto.trim(),
@@ -517,7 +730,7 @@ export function removerJogador(id: string) {
     Object.entries(locais.jogadores).filter(([chave]) => chave !== id),
   );
   locais = { ...locais, jogadores: resto, mesaAtual: locais.mesaAtual.filter((x) => x !== id) };
-  gravar();
+  persistir(() => nuvem.apagar("jogadores", "id", id, "o adversário"));
   avisar();
 }
 
@@ -532,7 +745,7 @@ export type EntradaCheckIn = Pick<
 export function registrarCheckIn(entrada: EntradaCheckIn): DiarioMental {
   const registro: DiarioMental = {
     ...entrada,
-    id: `dia-local-${crypto.randomUUID().slice(0, 8)}`,
+    id: crypto.randomUUID(),
     data: new Date().toISOString(),
     torneioId: null,
     houveTilt: null,
@@ -540,7 +753,7 @@ export function registrarCheckIn(entrada: EntradaCheckIn): DiarioMental {
     aprendizado: "",
   };
   locais = { ...locais, diario: [...locais.diario, registro] };
-  gravar();
+  persistir(() => nuvem.gravar("diario", diarioParaLinha(registro, sessao?.id ?? ""), "o check-in"));
   avisar();
   return registro;
 }
@@ -556,13 +769,18 @@ export function fecharSessao(id: string, fechamento: FechamentoSessao) {
     ...locais,
     diario: locais.diario.map((d) => (d.id === id ? { ...d, ...fechamento } : d)),
   };
-  gravar();
+  persistir(() => {
+    const d = locais.diario.find((x) => x.id === id);
+    return d
+      ? nuvem.gravar("diario", diarioParaLinha(d, sessao?.id ?? ""), "o fecho da sessão")
+      : Promise.resolve();
+  });
   avisar();
 }
 
 export function removerCheckIn(id: string) {
   locais = { ...locais, diario: locais.diario.filter((d) => d.id !== id) };
-  gravar();
+  persistir(() => nuvem.apagar("diario", "id", id, "o check-in"));
   avisar();
 }
 
@@ -580,18 +798,18 @@ export type EntradaMedicao = Omit<MedicaoTecnica, "id" | "data">;
 export function registrarMedicao(entrada: EntradaMedicao): MedicaoTecnica {
   const medicao: MedicaoTecnica = {
     ...entrada,
-    id: `med-local-${crypto.randomUUID().slice(0, 8)}`,
+    id: crypto.randomUUID(),
     data: new Date().toISOString(),
   };
   locais = { ...locais, medicoes: [...locais.medicoes, medicao] };
-  gravar();
+  persistir(() => nuvem.gravar("saude_tecnica", medicaoParaLinha(medicao, sessao?.id ?? ""), "a medição"));
   avisar();
   return medicao;
 }
 
 export function removerMedicao(id: string) {
   locais = { ...locais, medicoes: locais.medicoes.filter((m) => m.id !== id) };
-  gravar();
+  persistir(() => nuvem.apagar("saude_tecnica", "id", id, "a medição"));
   avisar();
 }
 
@@ -604,7 +822,7 @@ export function definirMeta(chave: ChaveMeta, alvo: number, ativa: boolean) {
     ...locais,
     metas: { ...locais.metas, [`${ano}:${chave}`]: { chave, alvo, ativa, ano } },
   };
-  gravar();
+  persistir(() => nuvem.gravar("metas", metaParaLinha({ chave, alvo, ativa, ano }, sessao?.id ?? ""), "a meta"));
   avisar();
 }
 

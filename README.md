@@ -379,5 +379,68 @@ grava e não apaga nada de outro.
 npx tsx scripts/conferir-schema.mts
 ```
 
-Falta ligar o cliente: `cp .env.example .env.local` e preencher com a URL do
-projeto e a chave `anon`.
+### Ligando o seu projeto
+
+```bash
+cp .env.example .env.local   # preencha com a URL e a chave anon
+```
+
+Depois aplique `supabase/migrations/20260808000000_inicial.sql` no SQL Editor do
+Supabase.
+
+**Sem essas variáveis o Oblix funciona igual**, em `localStorage`, e nada de
+conta aparece na interface. Não é hedge: é o que permite clonar o repositório e
+ver a demonstração rodando em trinta segundos, sem criar projeto na nuvem antes.
+Um botão "Entrar" que não pode funcionar é pior do que botão nenhum.
+
+### Como o cliente conversa com o banco
+
+**Só existe cliente de navegador.** Todas as telas são client components e o
+HTML sai estático; não há consulta no servidor para proteger, então não há
+middleware de sessão nem cliente de servidor. Quem impede um usuário de ler os
+dados de outro é a RLS, não uma verificação no meio do caminho — e é melhor
+assim: uma checagem que se pode esquecer de escrever protege menos que uma
+política que nega por padrão.
+
+**Carrega tudo uma vez, escreve atravessando.** A base inteira vem numa leva no
+login e vive em memória; cada alteração muda a memória na hora e vai para o
+banco em seguida, sem bloquear a tela. O painel calcula banca, ROI e comparação
+entre vias sobre a série completa, então paginar não economizaria nada — e
+manter a leitura síncrona é o que preserva as trinta telas como estão. Poker se
+anota no celular dentro do clube, com sinal ruim: travar esperando um POST seria
+o pior desenho possível, e o erro, quando vem, aparece como aviso em vez de
+perder o que a pessoa digitou.
+
+**A mesa em andamento não sobe.** Quem está sentado com você agora é estado do
+aparelho, não da conta.
+
+**A tradução entre domínio e banco mora em [`mapa.ts`](src/lib/data/mapa.ts)**,
+sem nenhuma dependência do Supabase — o que permite exercitá-la em ida e volta
+contra o schema real:
+
+```bash
+npx tsx scripts/conferir-mapa.mts
+```
+
+É o teste que pega a classe de erro mais silenciosa daqui: um `tresBet` que
+virou `tres_bet` em cinco lugares e `tresbet` no sexto não quebra o build, só faz
+o número sumir da tela. Ele também garante que `numeric` volte como número — o
+driver entrega `"150.00"`, e somar isso sem converter produziria concatenação de
+texto passando por soma de dinheiro.
+
+**Os ids são UUID desde o começo**, inclusive antes de existir conta. As chaves
+primárias no Postgres são `uuid`, então o formato antigo (`trn-local-a1b2c3d4`)
+seria recusado na hora de migrar. Um formato só, válido nos dois lados, elimina
+a tradução de ids na travessia — e é ele que distingue o que o jogador criou da
+base semeada, cujas chaves são curtas e legíveis (`trn-14`, `jog-3`).
+
+### Conta e migração
+
+Entrar e cadastrar são a mesma tela: quem chega não sabe dizer se já tem conta, e
+dois caminhos separados só produzem a escolha errada e um erro logo depois.
+
+O que já estava no navegador é **oferecido, não engolido**. A ordem natural de
+uso é ao contrário da técnica — a pessoa experimenta, registra alguns torneios e
+só então cria conta. Subir tudo sozinho seria decidir por ela o que fazer com
+dados que talvez fossem só teste; perder esses registros seria punir justamente
+quem se convenceu.
