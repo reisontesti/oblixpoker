@@ -368,9 +368,26 @@ o Postgres nunca recebia nada — a pior falha possível num app de registro,
 descoberta só ao trocar de aparelho. E uma leitura rejeitada deixava a tela presa
 em "Sincronizando…" para sempre, indistinguível de um app quebrado.
 
-**O que isto NÃO cobre:** recarregar a página inteira sem nenhuma conexão. O
-navegador não consegue nem buscar o app, e resolver isso exige um service worker
-— que o Oblix ainda não tem.
+**O service worker** ([`sw.js`](public/sw.js)) fecha o resto: recarregar a
+página sem sinal nenhum. Seis horas de clube incluem trocar de aba, o sistema
+descartar a página e o jogador reabrir — sem ele, o navegador não conseguia nem
+buscar o app.
+
+Três regras, e a última é a que mais importa:
+
+- **Navegação vai à rede primeiro** e cai no cache quando falha. Um app de
+  registro não pode servir versão velha havendo conexão; o cache é rede de
+  segurança, não fonte de verdade.
+- **Estáticos do Next vêm do cache primeiro.** Os nomes carregam hash do
+  conteúdo: se o nome é o mesmo, o arquivo é o mesmo.
+- **Supabase nunca passa pelo service worker.** Dado de conta servido de cache
+  seria pior que erro de rede — mostraria a base de um usuário depois de outro
+  entrar. O app já sabe lidar com a falha: tem espelho e fila.
+
+O Oblix também é **instalável na tela inicial**. Quem passa a noite num clube
+quer o app junto dos outros, em tela cheia e a um toque no intervalo. O convite
+só aparece quando o navegador diz que dá para instalar, e some para sempre
+depois de recusado.
 
 ---
 

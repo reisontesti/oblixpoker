@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Conta } from "@/components/conta/Conta";
 import { BemVindo, type Etapa } from "@/components/onboarding/BemVindo";
+import { Instalar } from "@/components/shell/Instalar";
 import { Logotipo } from "@/components/shell/Marca";
 import { NAVEGACAO } from "@/components/shell/navegacao";
 import { usarModo } from "@/lib/data/repositorio";
@@ -163,6 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </div>
           <Conta />
+          <Instalar />
         </div>
       </aside>
 
