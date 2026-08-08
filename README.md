@@ -31,8 +31,9 @@ Todo o PRD está construído. Metas não tem página própria de propósito: o
 conteúdo inteiro já vive no Dashboard, e uma entrada desabilitada na navegação
 seria promessa vazia.
 
-O que você registra é gravado em `localStorage` e entra imediatamente em todos
-os cálculos — banca, ROI, satélites, insights. Não há backend ainda.
+O que você registra entra imediatamente em todos os cálculos — banca, ROI,
+satélites, insights. Sem conta, fica em `localStorage`; com conta, no Postgres do
+Supabase e disponível em qualquer aparelho.
 
 ---
 
