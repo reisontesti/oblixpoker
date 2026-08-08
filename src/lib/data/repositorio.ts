@@ -11,6 +11,7 @@ import {
   TORNEIOS,
 } from "@/lib/data/seed";
 import { CHAVES_META } from "@/lib/types";
+import type { Resposta as RespostaTreino } from "@/lib/treino/tipos";
 import { obterSupabase, supabaseConfigurado } from "@/lib/supabase/cliente";
 import * as nuvem from "@/lib/data/nuvem";
 import {
@@ -18,6 +19,7 @@ import {
   medicaoParaLinha,
   metaParaLinha,
   movimentoParaLinha,
+  respostaTreinoParaLinha,
   sateliteParaLinha,
   torneioParaLinha,
 } from "@/lib/data/mapa";
@@ -98,6 +100,12 @@ export interface Registros {
    * app vai para segundo plano dezenas de vezes.
    */
   sessao: SessaoAoVivo | null;
+  /**
+   * O histórico do Treino. Fica junto do resto porque é o que transforma
+   * "64% de aproveitamento" em diagnóstico: sem as circunstâncias de cada
+   * resposta, o número não diz o que estudar.
+   */
+  treino: RespostaTreino[];
 }
 
 /**
@@ -164,6 +172,8 @@ export interface Estado extends Omit<Registros, "jogadores" | "metas"> {
   online: boolean;
   /** O torneio em andamento, quando existe. */
   sessao: SessaoAoVivo | null;
+  /** Todas as decisões de treino respondidas. */
+  treino: RespostaTreino[];
   /** Quantos torneios vieram do jogador, e não da base de demonstração. */
   proprios: number;
   /**
@@ -186,6 +196,7 @@ const vazio: Registros = {
   medicoes: [],
   metas: {},
   sessao: null,
+  treino: [],
 };
 
 const CONTA_INICIAL: Conta = { modo: "demonstracao", perfil: null };
@@ -292,6 +303,7 @@ function montar(
     medicoes: ordenarPorData([...base.medicoes, ...locais.medicoes]),
     metas: resolverMetas(locais.metas, anoDe(conta.modo)),
     sessao: locais.sessao,
+    treino: locais.treino,
     proprios: locais.torneios.length,
   };
 }
@@ -354,6 +366,7 @@ function ler(modo: ModoBase): Registros {
       medicoes: dados.medicoes ?? [],
       metas: dados.metas ?? {},
       sessao: dados.sessao ?? null,
+      treino: dados.treino ?? [],
     };
   } catch {
     // Armazenamento corrompido ou indisponível (modo privado, cota estourada):
@@ -485,6 +498,7 @@ function lerEspelho(id: string): Registros | null {
       medicoes: d.medicoes ?? [],
       metas: d.metas ?? {},
       sessao: d.sessao ?? null,
+      treino: d.treino ?? [],
     };
   } catch {
     return null;
@@ -1086,6 +1100,31 @@ export function removerCheckIn(id: string) {
   locais = { ...locais, diario: locais.diario.filter((d) => d.id !== id) };
   persistir(() => nuvem.apagar("diario", "id", id, "o check-in"));
   avisar();
+}
+
+// ── treino ─────────────────────────────────────────────────────────────────
+
+export type EntradaResposta = Omit<RespostaTreino, "id" | "em">;
+
+/**
+ * Guarda uma decisão de treino.
+ *
+ * Grava a cada resposta, e não ao fim da sessão: quem treina no intervalo de um
+ * torneio é interrompido no meio o tempo todo, e perder vinte decisões porque a
+ * mesa recomeçou faria a feature não valer o esforço.
+ */
+export function registrarResposta(entrada: EntradaResposta): RespostaTreino {
+  const resposta: RespostaTreino = {
+    ...entrada,
+    id: crypto.randomUUID(),
+    em: new Date().toISOString(),
+  };
+  locais = { ...locais, treino: [...locais.treino, resposta] };
+  persistir(() =>
+    nuvem.gravar("treino_respostas", respostaTreinoParaLinha(resposta, usuario?.id ?? ""), "a resposta"),
+  );
+  avisar();
+  return resposta;
 }
 
 // ── movimentações de banca ─────────────────────────────────────────────────

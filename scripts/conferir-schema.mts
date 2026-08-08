@@ -69,7 +69,14 @@ const comoAdmin = (sql: string) => db.exec(`reset role; ${sql} set role authenti
 const tabelas = await db.query(
   `select tablename, rowsecurity from pg_tables where schemaname = 'public' order by tablename`,
 );
-ok("todas as tabelas criadas", tabelas.rows.length === 10, `${tabelas.rows.length} tabelas`);
+// Nomeadas, e não contadas: um número só diz que algo mudou; a lista diz o quê.
+const ESPERADAS = [
+  "diario", "jogadores", "mesa_atual", "metas", "movimentos", "notas_jogador",
+  "perfis", "satelites", "saude_tecnica", "torneios", "treino_respostas",
+];
+const criadas = tabelas.rows.map((t) => (t as { tablename: string }).tablename).sort();
+const faltando = ESPERADAS.filter((t) => !criadas.includes(t));
+ok("todas as tabelas criadas", faltando.length === 0, faltando.length ? `faltam: ${faltando}` : `${criadas.length} tabelas`);
 ok(
   "RLS ligada em TODAS",
   tabelas.rows.every((t) => (t as { rowsecurity: boolean }).rowsecurity),

@@ -8,6 +8,8 @@ import {
   linhaParaJogador,
   linhaParaMedicao,
   linhaParaMeta,
+  linhaParaRespostaTreino,
+  respostaTreinoParaLinha,
   linhaParaMovimento,
   linhaParaSatelite,
   linhaParaTorneio,
@@ -50,7 +52,8 @@ export type Tabela =
   | "notas_jogador"
   | "diario"
   | "saude_tecnica"
-  | "metas";
+  | "metas"
+  | "treino_respostas";
 
 /** Avisado quando uma escrita falha — a interface decide o que dizer. */
 let aoFalhar: ((erro: string) => void) | null = null;
@@ -105,6 +108,7 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
       sb.from("diario").select("*").order("data"),
       sb.from("saude_tecnica").select("*").order("data"),
       sb.from("metas").select("*"),
+      sb.from("treino_respostas").select("*").order("em"),
     ]);
   } catch (e) {
     console.error("[oblix] leitura da nuvem:", e);
@@ -112,10 +116,10 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
     return null;
   }
 
-  const [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas] =
+  const [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas, treino] =
     resposta;
 
-  const erro = [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas]
+  const erro = [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas, treino]
     .map((r) => r.error)
     .find(Boolean);
   if (erro) {
@@ -152,6 +156,7 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
     // um torneio no celular e termina no computador.
     mesaAtual: [],
     sessao: null,
+    treino: ((treino.data ?? []) as Linha[]).map(linhaParaRespostaTreino),
     diario: ((diario.data ?? []) as Linha[]).map(linhaParaDiario),
     medicoes: ((medicoes.data ?? []) as Linha[]).map(linhaParaMedicao),
     metas: Object.fromEntries(
@@ -270,6 +275,13 @@ export async function migrarParaNuvem(r: Registros, usuarioId: string): Promise<
       "metas",
       () =>
         sb.from("metas").upsert(Object.values(r.metas).map((m) => metaParaLinha(m, usuarioId))),
+    ],
+    [
+      "respostas de treino",
+      () =>
+        sb
+          .from("treino_respostas")
+          .upsert(r.treino.map((t) => respostaTreinoParaLinha(t, usuarioId))),
     ],
   ];
 

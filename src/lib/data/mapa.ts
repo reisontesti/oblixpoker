@@ -19,6 +19,7 @@
  * "torneio em andamento", e `energia: null` quer dizer "não informei". Coagir
  * para zero apagaria a diferença dentro das médias, em silêncio.
  */
+import type { Resposta as RespostaTreino } from "@/lib/treino/tipos";
 import type {
   DiarioMental,
   Jogador,
@@ -285,4 +286,39 @@ export const linhaParaMeta = (l: Linha): MetaDefinida => ({
   alvo: num(l.alvo),
   ativa: Boolean(l.ativa),
   ano: num(l.ano),
+});
+
+// ── treino ─────────────────────────────────────────────────────────────────
+
+export const respostaTreinoParaLinha = (r: RespostaTreino, usuarioId: string): Linha => ({
+  id: r.id,
+  usuario_id: usuarioId,
+  em: r.em,
+  fase: r.fase,
+  situacao: r.situacao,
+  posicao: r.posicao,
+  stack_efetivo_bb: r.stackEfetivoBB,
+  jogadores_na_mesa: r.jogadoresNaMesa,
+  mao: r.mao,
+  escolhida: r.escolhida,
+  preferida: r.preferida,
+  frequencia_da_escolha: r.frequenciaDaEscolha,
+  correta: r.correta,
+  tempo_ms: r.tempoMs,
+});
+
+export const linhaParaRespostaTreino = (l: Linha): RespostaTreino => ({
+  id: String(l.id),
+  em: iso(l.em),
+  fase: l.fase as RespostaTreino["fase"],
+  situacao: l.situacao as RespostaTreino["situacao"],
+  posicao: l.posicao as RespostaTreino["posicao"],
+  stackEfetivoBB: num(l.stack_efetivo_bb),
+  jogadoresNaMesa: num(l.jogadores_na_mesa),
+  mao: txt(l.mao),
+  escolhida: l.escolhida as RespostaTreino["escolhida"],
+  preferida: l.preferida as RespostaTreino["preferida"],
+  frequenciaDaEscolha: num(l.frequencia_da_escolha),
+  correta: Boolean(l.correta),
+  tempoMs: num(l.tempo_ms),
 });

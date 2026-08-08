@@ -65,6 +65,18 @@ export const NAVEGACAO: ItemNav[] = [
     ),
   },
   {
+    href: "/treino",
+    rotulo: "Treino",
+    icone: (
+      <Icone>
+        {/* Alvo: o treino existe para mirar a fraqueza, não para praticar tudo. */}
+        <circle {...traco} cx="10" cy="10" r="6.5" />
+        <circle {...traco} cx="10" cy="10" r="2.6" />
+        <path {...traco} d="M10 1.8v2.2M10 16v2.2M1.8 10h2.2M16 10h2.2" />
+      </Icone>
+    ),
+  },
+  {
     href: "/jogadores",
     rotulo: "Jogadores",
     icone: (

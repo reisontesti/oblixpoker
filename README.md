@@ -28,6 +28,7 @@ Dark-only por decisão de produto. Interface inteira em pt-BR.
 | `/jogadores` | Banco de adversários: busca, edição e registro de campo |
 | `/mesa` | **Modo Mesa** — as leituras dos adversários sentados com você |
 | `/diario` | Check-in pré-jogo, fecho da sessão e o cruzamento estado × resultado |
+| `/treino` | **Treino** — decisões de MTT, com diagnóstico por fase |
 
 Todo o PRD está construído. Metas não tem página própria de propósito: o
 conteúdo inteiro já vive no Dashboard, e uma entrada desabilitada na navegação
@@ -312,6 +313,66 @@ sincroniza. O que sobe para o Postgres é o torneio pronto.
 O cronômetro conta a partir do instante gravado, e não somando segundos: o
 navegador congela `setInterval` em segundo plano, que é exatamente onde o Oblix
 passa a maior parte do torneio.
+
+---
+
+## Treino
+
+Situações reais de torneio, uma decisão por vez. O ciclo que a feature fecha é
+**jogar → registrar → identificar a fraqueza → treinar exatamente ela**.
+
+### O poker precisa estar certo, então é testado como código
+
+Uma ferramenta de treinamento que ensina errado é pior do que uma que não
+existe: o jogador leva o erro para a mesa com confiança. Por isso as
+propriedades que precisam valer sempre são testadas, e não só casos isolados
+([`conferir-treino.mts`](scripts/conferir-treino.mts)):
+
+- posição mais atrasada abre mais largo — UTG 11%, botão 38%;
+- stack mais curto empurra mais largo, em toda posição;
+- **pagar all-in é sempre mais estreito que empurrar**, no mesmo stack e
+  posição: quem empurra ganha o pote quando todos foldam, quem paga nunca ganha
+  sem showdown;
+- paga-se mais largo contra o small blind do que contra UTG;
+- as faixas de stack são contíguas, sem buraco nem sobreposição;
+- 1.800 cenários gerados sem nenhum impossível — nada de push/fold com 40 BB.
+
+```bash
+npx tsx scripts/conferir-maos.mts    # as 169 mãos e o parser de ranges
+npx tsx scripts/conferir-treino.mts  # o motor e a coerência dos ranges
+```
+
+### Não é certo ou errado
+
+Pré-flop não é binário. Uma mão pode ser raise 65% e fold 35%, e as duas são
+defensáveis — tratar a menos frequente como erro ensinaria a decorar resposta
+única onde o certo é ter as duas no range. Uma ação tomada em pelo menos um
+quarto do tempo conta como acerto, e o feedback **sempre mostra a mistura**, não
+só o veredito.
+
+### Sobre a procedência dos ranges
+
+Nada é copiado de solver, curso ou ferramenta de terceiros. São ranges de
+referência escritos para este produto a partir de princípios públicos, em
+notação que qualquer jogador revisa numa linha (`"77+, ATs+, KQs, AJo+"`) — uma
+grade de 169 células ninguém revisaria. A interface diz que são opinião do
+Oblix, não saída de solver.
+
+### O que o MVP faz e o que não faz
+
+Faz: seis fases, três tipos de decisão (abertura, push/fold, enfrentar all-in),
+feedback com frequências, diagnóstico por fase e recomendação do próximo treino
+pelo pior aproveitamento. O gerador já prioriza as situações em que o jogador
+vem errando.
+
+Não faz ainda: ICM de verdade — a bolha aplica um aperto declarado sobre o call,
+que é o efeito de primeira ordem, e o produto **diz quando isso mudou a
+resposta** em vez de alterar em silêncio. Também ficam para depois pós-flop,
+níveis de dificuldade e a ligação automática com o registro de torneios.
+
+O motor é separado da interface: recebe fase e histórico, devolve cenário e
+recomendação, sem saber que existe tela. É o que permite trocar a camada de
+dados depois sem tocar em nada do resto.
 
 ---
 
