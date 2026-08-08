@@ -297,7 +297,8 @@ Para conferir os números da base:
 
 ```bash
 npx tsx scripts/conferir-dados.ts
-npx tsx scripts/conferir-vazio.ts   # a base vazia como estado de primeira classe
+npx tsx scripts/conferir-vazio.ts    # a base vazia como estado de primeira classe
+npx tsx scripts/conferir-schema.mts  # o schema do Supabase, com RLS de verdade
 ```
 
 O segundo confere o oposto do primeiro: que a cadeia inteira de análise
@@ -308,3 +309,39 @@ da demonstração continuaria funcionando.
 Quando houver backend, a troca é localizada: `seed.ts` exporta as mesmas
 estruturas que uma consulta ao Supabase devolveria, e nada em `calc/` sabe de
 onde os dados vieram.
+
+---
+
+## Backend (em construção)
+
+O schema está em
+[`supabase/migrations/`](supabase/migrations/20260808000000_inicial.sql) e
+espelha `src/lib/types.ts`. Três decisões o atravessam:
+
+- **Toda tabela carrega `usuario_id` e tem RLS ligada, sem exceção.** Um painel
+  de poker guarda quanto a pessoa ganha, contra quem joga e o que ela escreveu
+  sobre a própria cabeça depois de perder.
+- **Dinheiro é `numeric(12,2)`, nunca `float`.** Os valores são somados centenas
+  de vezes para formar a curva, e ponto flutuante acumularia erro justamente na
+  figura herói do painel.
+- **`via = 'satelite'` exige vínculo, por CHECK.** O banco recusa a contradição
+  que o formulário já evita, porque é dessa coluna que todo o comparativo
+  depende.
+
+Duas tabelas não existiam no MVP e nasceram de decisões de produto:
+`saude_tecnica` guarda **uma linha por medição** em vez de dois retratos fixos
+(o jogador informa os números quando vai sentar, na cadência em que ele jogar,
+então a frequência vira dado em vez de suposição); e `metas` guarda **só o
+alvo**, porque o valor atingido continua sendo calculado dos registros — é o que
+impede a meta de virar um checkbox.
+
+O schema é testado contra um Postgres de verdade (PGlite, sem Docker), e o teste
+verifica principalmente o que precisa **falhar**: que um usuário não lê, não
+grava e não apaga nada de outro.
+
+```bash
+npx tsx scripts/conferir-schema.mts
+```
+
+Falta ligar o cliente: `cp .env.example .env.local` e preencher com a URL do
+projeto e a chave `anon`.
