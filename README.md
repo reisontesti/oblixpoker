@@ -529,8 +529,21 @@ npx tsx scripts/conferir-schema.mts
 cp .env.example .env.local   # preencha com a URL e a chave anon
 ```
 
-Depois aplique `supabase/migrations/20260808000000_inicial.sql` no SQL Editor do
-Supabase.
+Depois aplique as migrações:
+
+```bash
+npx tsx scripts/migrar.mts       # todas, em ordem
+```
+
+**Não use o SQL Editor do painel para isso.** Ele respondeu `Success` quatro
+vezes seguidas sem que a restrição no banco mudasse, e sem nenhum sinal de que
+algo tinha falhado — um caminho que não avisa quando não funciona é pior do que
+um que quebra. O script roda cada arquivo numa transação e **confere o resultado
+no banco** antes de dizer que terminou; se a verificação não bater, ele sai com
+erro.
+
+Precisa de `DATABASE_URL` no `.env.local`, da aba **Session pooler** (a conexão
+direta do Supabase é IPv6-only e não resolve em rede sem IPv6).
 
 **Só a chave `anon` entra no `.env.local`.** A `service_role` ignora RLS, e toda
 variável `NEXT_PUBLIC_*` é embutida no bundle do navegador — publicá-la daria a
