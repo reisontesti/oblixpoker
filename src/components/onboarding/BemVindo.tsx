@@ -12,6 +12,7 @@ import {
   DETALHE_OBJETIVO,
   MODALIDADES,
   OBJETIVOS,
+  ROTULO_OBJETIVO,
   type Modalidade,
   type Objetivo,
   type Perfil,
@@ -36,7 +37,7 @@ import {
 
 const OPCOES_OBJETIVO = OBJETIVOS.map((o) => ({
   valor: o,
-  rotulo: o,
+  rotulo: ROTULO_OBJETIVO[o],
   detalhe: DETALHE_OBJETIVO[o],
 }));
 
@@ -59,7 +60,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
   const [etapa, setEtapa] = useState<Etapa>(etapaInicial);
 
   const [nome, setNome] = useState("");
-  const [objetivo, setObjetivo] = useState<Objetivo>("Evolução");
+  const [objetivo, setObjetivo] = useState<Objetivo>("evolucao");
   const [modalidade, setModalidade] = useState<Modalidade>("MTT");
   const [banca, setBanca] = useState<number | null>(null);
   const [buyIn, setBuyIn] = useState<number | null>(100);

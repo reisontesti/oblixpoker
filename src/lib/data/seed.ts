@@ -365,7 +365,7 @@ export const BANKROLL_INICIAL = 1_800;
 export const PERFIL: Perfil = {
   nome: "Rafael Antunes",
   nick: "obliqo",
-  objetivo: "Evolução",
+  objetivo: "evolucao",
   modalidade: "MTT",
   clubes: [...CLUBES],
   buyInPadrao: 100,

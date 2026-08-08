@@ -13,6 +13,7 @@ import { useRegistros } from "@/lib/painel";
 import {
   MODALIDADES,
   OBJETIVOS,
+  ROTULO_OBJETIVO,
   type Modalidade,
   type Objetivo,
   type Perfil,
@@ -189,7 +190,7 @@ export default function TelaPerfil() {
             desabilitado={demo}
             valor={rascunho.objetivo}
             aoMudar={(v) => editar("objetivo", v as Objetivo)}
-            opcoes={OBJETIVOS.map((o) => ({ valor: o, rotulo: o }))}
+            opcoes={OBJETIVOS.map((o) => ({ valor: o, rotulo: ROTULO_OBJETIVO[o] }))}
           />
           <CampoSelecao
             rotulo="Modalidade"

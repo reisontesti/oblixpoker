@@ -19,16 +19,65 @@ export const MODALIDADES = ["MTT", "Cash", "Sit&Go", "Home Game"] as const;
 
 export type Modalidade = (typeof MODALIDADES)[number];
 
-export const OBJETIVOS = ["Recreativo", "Evolução", "Competitivo", "Profissional"] as const;
+/**
+ * A CHAVE é ASCII; o rótulo em português mora em `ROTULO_OBJETIVO`.
+ *
+ * Mesma regra de `PERFIS_JOGADOR` e `NIVEIS_ENERGIA`, e pelo mesmo motivo —
+ * este aqui foi o que ficou de fora e voltou a morder. A restrição em
+ * produção guardava `'Evolu√ß√£o'`: aceitava três dos quatro valores e
+ * recusava justamente o que o cadastro oferece selecionado. A falha era
+ * silenciosa (o espelho local continua certo) e só apareceria quando a pessoa
+ * entrasse de outro aparelho e não encontrasse o próprio nome.
+ *
+ * Um acento dentro de um `CHECK` viaja por área de transferência, editor de
+ * SQL e normalização Unicode até um dos saltos corromper o byte. Chave ASCII
+ * na coluna, acento só na tela.
+ */
+export const OBJETIVOS = ["recreativo", "evolucao", "competitivo", "profissional"] as const;
 
 export type Objetivo = (typeof OBJETIVOS)[number];
 
-export const DETALHE_OBJETIVO: Record<Objetivo, string> = {
-  Recreativo: "Jogo pelo prazer",
-  Evolução: "Quero melhorar",
-  Competitivo: "Jogo para ganhar",
-  Profissional: "É a minha renda",
+export const ROTULO_OBJETIVO: Record<Objetivo, string> = {
+  recreativo: "Recreativo",
+  evolucao: "Evolução",
+  competitivo: "Competitivo",
+  profissional: "Profissional",
 };
+
+export const DETALHE_OBJETIVO: Record<Objetivo, string> = {
+  recreativo: "Jogo pelo prazer",
+  evolucao: "Quero melhorar",
+  competitivo: "Jogo para ganhar",
+  profissional: "É a minha renda",
+};
+
+/**
+ * Converte o que estiver gravado para a chave ASCII de hoje.
+ *
+ * Existe porque a troca de convenção acontece com perfis já gravados — no
+ * `localStorage` de quem usa o Oblix e nas linhas de quem tem conta. Ignora
+ * caixa e acento na comparação de propósito: o valor pode ter vindo como
+ * "Evolução", "Evolu√ß√£o" ou "evolucao", e nenhum desses três merece virar
+ * um perfil quebrado.
+ *
+ * Não reconhecido cai em `evolucao`, que é o padrão do produto — melhor um
+ * padrão razoável do que um valor que a restrição do banco recusa.
+ */
+export function normalizarObjetivo(bruto: unknown): Objetivo {
+  const texto = String(bruto ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+  return (OBJETIVOS as readonly string[]).includes(texto)
+    ? (texto as Objetivo)
+    : texto.startsWith("recre")
+      ? "recreativo"
+      : texto.startsWith("compet")
+        ? "competitivo"
+        : texto.startsWith("profiss")
+          ? "profissional"
+          : "evolucao";
+}
 
 export type ViaEntrada = "direto" | "satelite";
 

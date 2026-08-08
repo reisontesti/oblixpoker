@@ -83,11 +83,39 @@ ok(
   tabelas.rows.filter((t) => !(t as { rowsecurity: boolean }).rowsecurity).map((t) => (t as { tablename: string }).tablename).join(",") || "nenhuma sem RLS",
 );
 
+// ── nenhum acento dentro de restrição ──────────────────────────────────────
+//
+// Este teste nasceu de duas ocorrências em produção. `jogadores.perfil`
+// guardava 'Pão-duro' num CHECK, e o byte acentuado se corrompeu em algum
+// salto entre editor, área de transferência e normalização Unicode: a
+// restrição passou a recusar exatamente o valor que deveria aceitar. Meses
+// depois a mesma coisa apareceu em `perfis.objetivo`, com 'Evolu√ß√£o'
+// gravado — e essa era a opção que o cadastro oferece SELECIONADA, então
+// qualquer pessoa que aceitasse o padrão tinha o perfil recusado, em silêncio.
+//
+// A regra que sai daí: valor que vive dentro de um CHECK é chave ASCII, e o
+// português mora num mapa de rótulos no código. Isto aqui é o que impede a
+// terceira vez.
+const restricoes = await db.query<{ tabela: string; nome: string; definicao: string }>(
+  `select conrelid::regclass::text as tabela, conname as nome,
+          pg_get_constraintdef(oid) as definicao
+     from pg_constraint
+    where connamespace = 'public'::regnamespace and contype = 'c'`,
+);
+const acentuadas = restricoes.rows.filter((r) => /[^\x00-\x7F]/.test(r.definicao));
+ok(
+  "nenhuma restrição CHECK com byte não-ASCII",
+  acentuadas.length === 0,
+  acentuadas.length
+    ? acentuadas.map((r) => `${r.tabela}.${r.nome}`).join(", ")
+    : `${restricoes.rows.length} restrições conferidas`,
+);
+
 // ── restrições de domínio ──────────────────────────────────────────────────
 await entrarComo(ANA);
 await db.exec(`
   insert into public.perfis (id, nome, nick, objetivo, modalidade, buy_in_padrao)
-  values ('${ANA}', 'Ana', 'ana', 'Competitivo', 'MTT', 50);
+  values ('${ANA}', 'Ana', 'ana', 'competitivo', 'MTT', 50);
 `);
 
 await db.exec(`

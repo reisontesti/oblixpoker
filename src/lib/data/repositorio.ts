@@ -10,7 +10,7 @@ import {
   SATELITES,
   TORNEIOS,
 } from "@/lib/data/seed";
-import { CHAVES_META } from "@/lib/types";
+import { CHAVES_META, normalizarObjetivo } from "@/lib/types";
 import type { Resposta as RespostaTreino } from "@/lib/treino/tipos";
 import { obterSupabase, supabaseConfigurado } from "@/lib/supabase/cliente";
 import * as nuvem from "@/lib/data/nuvem";
@@ -205,7 +205,7 @@ const CONTA_INICIAL: Conta = { modo: "demonstracao", perfil: null };
 const PERFIL_NEUTRO: Perfil = {
   nome: "Jogador",
   nick: "eu",
-  objetivo: "Evolução",
+  objetivo: "evolucao",
   modalidade: "MTT",
   clubes: [],
   buyInPadrao: 100,
@@ -572,7 +572,13 @@ function lerConta(): { conta: Conta; decidiu: boolean } {
     if (!bruto) return { conta: CONTA_INICIAL, decidiu: false };
     const dados = JSON.parse(bruto) as Partial<Conta>;
     const modo: ModoBase = dados.modo === "proprio" ? "proprio" : "demonstracao";
-    return { conta: { modo, perfil: dados.perfil ?? null }, decidiu: true };
+    // O perfil gravado pode ser de antes de `objetivo` virar chave ASCII.
+    // Normalizar na leitura é o que impede um perfil antigo de ser recusado
+    // pela restrição do banco na primeira vez que subir.
+    const perfil = dados.perfil
+      ? { ...dados.perfil, objetivo: normalizarObjetivo(dados.perfil.objetivo) }
+      : null;
+    return { conta: { modo, perfil }, decidiu: true };
   } catch {
     return { conta: CONTA_INICIAL, decidiu: false };
   }

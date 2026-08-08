@@ -19,6 +19,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Avisos, AvisosDaNuvem } from "@/components/ui/Aviso";
 import { Folha } from "@/components/ui/Folha";
 import { usarModo } from "@/lib/data/repositorio";
+import { ROTULO_OBJETIVO } from "@/lib/types";
 import { useRegistros } from "@/lib/painel";
 
 /** O item ativo inclui as subpáginas: `/torneios/novo` acende "Torneios". */
@@ -180,7 +181,7 @@ function MenuMais({ aoFechar }: { aoFechar: () => void }) {
           <span className="block truncate text-[12px] text-ink-muted">
             {modo === "demonstracao"
               ? "Base de demonstração"
-              : `${perfil.objetivo} · ${perfil.modalidade}`}
+              : `${ROTULO_OBJETIVO[perfil.objetivo]} · ${perfil.modalidade}`}
           </span>
         </span>
         <span aria-hidden className="text-ink-faint">
@@ -334,7 +335,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="block truncate text-[12px] text-ink-muted">
                 {modo === "demonstracao"
                   ? "Base de demonstração"
-                  : `${perfil.objetivo} · ${perfil.modalidade}`}
+                  : `${ROTULO_OBJETIVO[perfil.objetivo]} · ${perfil.modalidade}`}
               </span>
             </span>
           </Link>

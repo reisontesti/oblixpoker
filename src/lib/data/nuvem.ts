@@ -22,7 +22,7 @@ import {
   type Linha,
 } from "@/lib/data/mapa";
 import type { Registros } from "@/lib/data/repositorio";
-import type { Jogador, Perfil } from "@/lib/types";
+import { normalizarObjetivo, type Jogador, type Perfil } from "@/lib/types";
 
 /**
  * A base do jogador no Postgres.
@@ -308,7 +308,7 @@ const perfilParaLinha = (p: Perfil, usuarioId: string): Linha => ({
 const linhaParaPerfil = (l: Linha): Perfil => ({
   nome: String(l.nome ?? ""),
   nick: String(l.nick ?? ""),
-  objetivo: l.objetivo as Perfil["objetivo"],
+  objetivo: normalizarObjetivo(l.objetivo),
   modalidade: l.modalidade as Perfil["modalidade"],
   clubes: [],
   buyInPadrao: Number(l.buy_in_padrao ?? 100),
