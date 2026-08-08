@@ -28,6 +28,10 @@ import type {
   MedicaoTecnica,
   MetaDefinida,
   MovimentoBankroll,
+  NivelEnergia,
+  ParadaSessao,
+  PreparoSessao,
+  SessaoAoVivo,
   NotaJogador,
   Perfil,
   Satelite,
@@ -88,9 +92,20 @@ export interface Registros {
    * diferente e mora no campo `ativa`.
    */
   metas: Record<string, MetaDefinida>;
+  /**
+   * O torneio que está sendo jogado agora, se houver. Guardado junto com o
+   * resto e gravado a cada parada: são seis horas de clube num celular, e o
+   * app vai para segundo plano dezenas de vezes.
+   */
+  sessao: SessaoAoVivo | null;
 }
 
-export interface Sessao {
+/**
+ * Quem está logado. Chamava-se "Sessao" e virou "Usuario" quando o domínio
+ * reivindicou a palavra: no poker, sessão é o período em que se está jogando,
+ * e disputar o termo dentro do mesmo estado só produziria leitura errada.
+ */
+export interface Usuario {
   id: string;
   email: string;
 }
@@ -138,11 +153,13 @@ export interface Estado extends Omit<Registros, "jogadores" | "metas"> {
    * moram só neste navegador — que continua sendo um modo de uso legítimo, e
    * não um estado degradado.
    */
-  sessao: Sessao | null;
+  usuario: Usuario | null;
   /** Há projeto Supabase configurado? Sem isso, nada de conta aparece. */
   comNuvem: boolean;
   /** Carregando a base da nuvem agora. */
   sincronizando: boolean;
+  /** O torneio em andamento, quando existe. */
+  sessao: SessaoAoVivo | null;
   /** Quantos torneios vieram do jogador, e não da base de demonstração. */
   proprios: number;
   /**
@@ -164,6 +181,7 @@ const vazio: Registros = {
   diario: [],
   medicoes: [],
   metas: {},
+  sessao: null,
 };
 
 const CONTA_INICIAL: Conta = { modo: "demonstracao", perfil: null };
@@ -231,7 +249,7 @@ function diaLocalDe(data: Date): string {
 // instantâneo do servidor. Um `let` declarado depois dessa chamada cairia na
 // zona morta temporal e o build quebraria só na pré-renderização.
 let conta: Conta = CONTA_INICIAL;
-let sessao: Sessao | null = null;
+let usuario: Usuario | null = null;
 let sincronizando = false;
 
 function montar(
@@ -244,7 +262,7 @@ function montar(
   const base = baseDe(conta.modo);
   return {
     modo: conta.modo,
-    sessao,
+    usuario,
     comNuvem: supabaseConfigurado,
     sincronizando,
     pronto,
@@ -261,6 +279,7 @@ function montar(
     diario: ordenarPorData([...base.diario, ...locais.diario]),
     medicoes: ordenarPorData([...base.medicoes, ...locais.medicoes]),
     metas: resolverMetas(locais.metas, anoDe(conta.modo)),
+    sessao: locais.sessao,
     proprios: locais.torneios.length,
   };
 }
@@ -321,6 +340,7 @@ function ler(modo: ModoBase): Registros {
       diario: dados.diario ?? [],
       medicoes: dados.medicoes ?? [],
       metas: dados.metas ?? {},
+      sessao: dados.sessao ?? null,
     };
   } catch {
     // Armazenamento corrompido ou indisponível (modo privado, cota estourada):
@@ -349,7 +369,7 @@ function gravar() {
  * perder o que a pessoa digitou.
  */
 function persistir(naNuvem?: () => Promise<unknown>) {
-  if (sessao && conta.modo === "proprio" && naNuvem) {
+  if (usuario && conta.modo === "proprio" && naNuvem) {
     void naNuvem();
     return;
   }
@@ -453,7 +473,7 @@ export function comecarDoZero(perfil: Perfil, bancaInicial: number) {
 
   gravarConta();
   persistir(async () => {
-    const u = sessao?.id ?? "";
+    const u = usuario?.id ?? "";
     if (conta.perfil) await nuvem.salvarPerfil(conta.perfil, u);
     const abertura = locais.movimentos.find((m) => m.descricao === "Banca inicial");
     if (abertura) await nuvem.gravar("movimentos", movimentoParaLinha(abertura, u), "a banca inicial");
@@ -465,7 +485,7 @@ export function atualizarPerfil(perfil: Perfil) {
   if (conta.modo !== "proprio") return;
   conta = { ...conta, perfil };
   gravarConta();
-  if (sessao) void nuvem.salvarPerfil(perfil, sessao.id);
+  if (usuario) void nuvem.salvarPerfil(perfil, usuario.id);
   avisar();
 }
 
@@ -478,8 +498,8 @@ export function atualizarPerfil(perfil: Perfil) {
  * do jogador, e deixá-lo logado olhando a demonstração seria mostrar dados de
  * mentira para quem acabou de pedir os dele.
  */
-async function adotarSessao(nova: Sessao) {
-  sessao = nova;
+async function adotarSessao(nova: Usuario) {
+  usuario = nova;
   sincronizando = true;
   conta = { ...conta, modo: "proprio" };
   decidiu = true;
@@ -566,7 +586,7 @@ export async function cadastrar(email: string, senha: string): Promise<Resultado
  */
 export async function sair() {
   await obterSupabase()?.auth.signOut();
-  sessao = null;
+  usuario = null;
   locais = ler("proprio");
   avisar();
 }
@@ -589,13 +609,13 @@ async function recuperarSessao() {
  * quem se convenceu.
  */
 export async function migrarLocaisParaNuvem(): Promise<string | null> {
-  if (!sessao) return "Você não está em nenhuma conta.";
+  if (!usuario) return "Você não está em nenhuma conta.";
   const guardados = ler("proprio");
   if (!guardados.torneios.length && !Object.keys(guardados.jogadores).length) {
     return "Não há nada neste navegador para subir.";
   }
 
-  const erro = await nuvem.migrarParaNuvem(guardados, sessao.id);
+  const erro = await nuvem.migrarParaNuvem(guardados, usuario.id);
   if (erro) return erro;
 
   const base = await nuvem.carregarDaNuvem();
@@ -656,7 +676,7 @@ export function registrar(entrada: EntradaRegistro): Torneio {
   // Satélite antes do torneio: é o torneio que aponta para ele, e a chave
   // estrangeira recusaria a ordem inversa.
   persistir(async () => {
-    const u = sessao?.id ?? "";
+    const u = usuario?.id ?? "";
     const sat = idSatelite ? locais.satelites.find((x) => x.id === idSatelite) : null;
     if (sat) await nuvem.gravar("satelites", { ...sateliteParaLinha(sat, u), torneio_id: null }, "o satélite");
     await nuvem.gravar("torneios", torneioParaLinha(torneio, u), "o torneio");
@@ -709,7 +729,7 @@ export function salvarJogador(jogador: Jogador) {
     ...locais,
     jogadores: { ...locais.jogadores, [jogador.id]: jogador },
   };
-  persistir(() => nuvem.gravarJogador(jogador, sessao?.id ?? ""));
+  persistir(() => nuvem.gravarJogador(jogador, usuario?.id ?? ""));
   avisar();
 }
 
@@ -769,7 +789,7 @@ export function registrarCheckIn(entrada: EntradaCheckIn): DiarioMental {
     aprendizado: "",
   };
   locais = { ...locais, diario: [...locais.diario, registro] };
-  persistir(() => nuvem.gravar("diario", diarioParaLinha(registro, sessao?.id ?? ""), "o check-in"));
+  persistir(() => nuvem.gravar("diario", diarioParaLinha(registro, usuario?.id ?? ""), "o check-in"));
   avisar();
   return registro;
 }
@@ -788,7 +808,7 @@ export function fecharSessao(id: string, fechamento: FechamentoSessao) {
   persistir(() => {
     const d = locais.diario.find((x) => x.id === id);
     return d
-      ? nuvem.gravar("diario", diarioParaLinha(d, sessao?.id ?? ""), "o fecho da sessão")
+      ? nuvem.gravar("diario", diarioParaLinha(d, usuario?.id ?? ""), "o fecho da sessão")
       : Promise.resolve();
   });
   avisar();
@@ -798,6 +818,123 @@ export function removerCheckIn(id: string) {
   locais = { ...locais, diario: locais.diario.filter((d) => d.id !== id) };
   persistir(() => nuvem.apagar("diario", "id", id, "o check-in"));
   avisar();
+}
+
+// ── sessão ao vivo ─────────────────────────────────────────────────────────
+//
+// Fica só neste aparelho, como a mesa em andamento: ninguém começa um torneio
+// no celular e termina no computador. O que sobe para a conta é o torneio
+// pronto, quando a sessão fecha.
+
+export function iniciarSessao(preparo: PreparoSessao, energia: NivelEnergia): SessaoAoVivo {
+  const sessao: SessaoAoVivo = {
+    id: crypto.randomUUID(),
+    iniciadaEm: new Date().toISOString(),
+    finalizadaEm: null,
+    energiaInicial: energia,
+    preparo,
+    paradas: [],
+    torneioId: null,
+  };
+  locais = { ...locais, sessao };
+  gravar();
+  avisar();
+  return sessao;
+}
+
+export type EntradaParada = Omit<ParadaSessao, "id" | "em">;
+
+/**
+ * Registra uma parada e grava na hora.
+ *
+ * Gravar a cada parada, e não ao final, é o que separa um registro útil de um
+ * prejuízo: o app passa seis horas indo para segundo plano no bolso de alguém,
+ * e perder o histórico do torneio inteiro por um refresh acidental faria o
+ * jogador nunca mais confiar na feature.
+ */
+export function registrarParada(entrada: EntradaParada): ParadaSessao | null {
+  if (!locais.sessao) return null;
+  const parada: ParadaSessao = { ...entrada, id: crypto.randomUUID(), em: new Date().toISOString() };
+  locais = { ...locais, sessao: { ...locais.sessao, paradas: [...locais.sessao.paradas, parada] } };
+  gravar();
+  avisar();
+  return parada;
+}
+
+export function removerParada(id: string) {
+  if (!locais.sessao) return;
+  const paradas = locais.sessao.paradas.filter((p) => p.id !== id);
+  locais = { ...locais, sessao: { ...locais.sessao, paradas } };
+  gravar();
+  avisar();
+}
+
+/** Marca o fim do jogo. A sessão continua existindo até virar torneio. */
+export function encerrarSessao(): SessaoAoVivo | null {
+  if (!locais.sessao) return null;
+  const sessao = { ...locais.sessao, finalizadaEm: new Date().toISOString() };
+  locais = { ...locais, sessao };
+  gravar();
+  avisar();
+  return sessao;
+}
+
+/** Abandona o torneio em andamento sem registrar nada. */
+export function descartarSessao() {
+  locais = { ...locais, sessao: null };
+  gravar();
+  avisar();
+}
+
+export interface ResultadoDaSessao {
+  colocacao: number | null;
+  premiacao: number;
+  rebuys: number;
+  addon: number;
+  notaDisciplina: number;
+  melhorDecisao?: string;
+  piorDecisao?: string;
+  aprendizado?: string;
+}
+
+/**
+ * Fecha a sessão e a transforma em torneio registrado.
+ *
+ * A duração sai do cronômetro, não da memória de quem acabou de ser eliminado
+ * às três da manhã — é o único campo do formulário antigo que a sessão ao vivo
+ * torna desnecessário perguntar. A energia também: foi respondida no começo,
+ * quando ainda descrevia como a pessoa chegou.
+ */
+export function concluirSessao(resultado: ResultadoDaSessao): Torneio | null {
+  const sessao = locais.sessao;
+  if (!sessao) return null;
+
+  const fim = sessao.finalizadaEm ?? new Date().toISOString();
+  const duracaoMin = Math.max(
+    1,
+    Math.round((new Date(fim).getTime() - new Date(sessao.iniciadaEm).getTime()) / 60_000),
+  );
+
+  const torneio = registrar({
+    torneio: {
+      data: sessao.iniciadaEm,
+      nome: sessao.preparo.nome,
+      clube: sessao.preparo.clube,
+      modalidade: sessao.preparo.modalidade,
+      buyIn: sessao.preparo.buyIn,
+      jogadores: sessao.preparo.jogadores,
+      via: sessao.preparo.via,
+      energia: sessao.energiaInicial,
+      duracaoMin,
+      ...resultado,
+    },
+    satelite: sessao.preparo.satelite,
+  });
+
+  locais = { ...locais, sessao: null };
+  gravar();
+  avisar();
+  return torneio;
 }
 
 // ── saúde técnica ──────────────────────────────────────────────────────────
@@ -818,7 +955,7 @@ export function registrarMedicao(entrada: EntradaMedicao): MedicaoTecnica {
     data: new Date().toISOString(),
   };
   locais = { ...locais, medicoes: [...locais.medicoes, medicao] };
-  persistir(() => nuvem.gravar("saude_tecnica", medicaoParaLinha(medicao, sessao?.id ?? ""), "a medição"));
+  persistir(() => nuvem.gravar("saude_tecnica", medicaoParaLinha(medicao, usuario?.id ?? ""), "a medição"));
   avisar();
   return medicao;
 }
@@ -838,7 +975,7 @@ export function definirMeta(chave: ChaveMeta, alvo: number, ativa: boolean) {
     ...locais,
     metas: { ...locais.metas, [`${ano}:${chave}`]: { chave, alvo, ativa, ano } },
   };
-  persistir(() => nuvem.gravar("metas", metaParaLinha({ chave, alvo, ativa, ano }, sessao?.id ?? ""), "a meta"));
+  persistir(() => nuvem.gravar("metas", metaParaLinha({ chave, alvo, ativa, ano }, usuario?.id ?? ""), "a meta"));
   avisar();
 }
 

@@ -90,6 +90,68 @@ export interface Torneio {
   notaDisciplina: number | null;
 }
 
+/**
+ * Uma parada registrada durante o torneio — tipicamente no intervalo.
+ *
+ * Tudo é opcional de propósito. O jogador está no intervalo, com dez minutos e
+ * uma fila do banheiro; exigir seis campos faria ele parar de registrar no
+ * terceiro intervalo, e meia sessão anotada vale menos que nenhuma.
+ */
+export interface ParadaSessao {
+  id: string;
+  /** ISO. Quando a parada foi registrada. */
+  em: string;
+  /** Posição estimada no campo. */
+  posicao: number | null;
+  jogadoresRestantes: number | null;
+  /**
+   * Fichas na mesa. Sozinho este número não diz nada — 40 mil é muito no nível
+   * 3 e é desespero no nível 18. O que informa é a razão com o blind, e é por
+   * isso que os dois andam juntos.
+   */
+  fichas: number | null;
+  /** Big blind vigente. */
+  blind: number | null;
+  energia: NivelEnergia | null;
+  nota: string;
+}
+
+/** O preparo do torneio, capturado antes de a primeira mão ser distribuída. */
+export interface PreparoSessao {
+  data: string;
+  nome: string;
+  clube: string;
+  modalidade: Modalidade;
+  buyIn: number;
+  jogadores: number;
+  via: ViaEntrada;
+  satelite: Omit<Satelite, "id" | "torneioId" | "valorVaga"> | null;
+}
+
+/**
+ * Um torneio sendo jogado agora.
+ *
+ * Existe separada do `Torneio` porque durante o jogo não há resultado: não se
+ * sabe a colocação, nem a premiação, nem quanto tempo vai durar. Só quando o
+ * jogador é eliminado é que a sessão vira torneio — e aí a duração sai do
+ * cronômetro em vez de ser lembrada por alto.
+ *
+ * Precisa sobreviver a fechar o aplicativo. São seis horas de clube num
+ * celular, e o app vai para segundo plano dezenas de vezes.
+ */
+export interface SessaoAoVivo {
+  id: string;
+  iniciadaEm: string;
+  /** Nulo enquanto o torneio está em andamento. */
+  finalizadaEm: string | null;
+  /** Como o jogador chegou — perguntado ANTES, não recordado depois. */
+  energiaInicial: NivelEnergia;
+  preparo: PreparoSessao;
+  paradas: ParadaSessao[];
+  /** Preenchido quando a sessão vira torneio registrado. */
+  torneioId: string | null;
+}
+
 /** Movimentações de bankroll que não vêm de torneios. */
 export interface MovimentoBankroll {
   id: string;

@@ -119,9 +119,12 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
     satelites: ((satelites.data ?? []) as Linha[]).map(linhaParaSatelite),
     movimentos: ((movimentos.data ?? []) as Linha[]).map(linhaParaMovimento),
     jogadores: listaJogadores,
-    // A mesa em andamento é estado do aparelho, não da conta: quem está
-    // sentado com você agora não faz sentido sincronizar entre dispositivos.
+    // Mesa em andamento e sessão ao vivo são estado do APARELHO, não da conta.
+    // Quem está sentado com você agora, e o torneio que você está jogando
+    // neste momento, não fazem sentido em outro dispositivo — ninguém começa
+    // um torneio no celular e termina no computador.
     mesaAtual: [],
+    sessao: null,
     diario: ((diario.data ?? []) as Linha[]).map(linhaParaDiario),
     medicoes: ((medicoes.data ?? []) as Linha[]).map(linhaParaMedicao),
     metas: Object.fromEntries(

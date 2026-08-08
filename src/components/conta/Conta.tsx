@@ -32,14 +32,14 @@ import { useRegistros } from "@/lib/painel";
  * com dados que talvez fossem só teste.
  */
 export function Conta() {
-  const { sessao, comNuvem, sincronizando } = useRegistros();
+  const { usuario, comNuvem, sincronizando } = useRegistros();
   const [aberto, setAberto] = useState(false);
 
   if (!comNuvem) return null;
 
   return (
     <>
-      {sessao ? (
+      {usuario ? (
         <button
           type="button"
           onClick={() => setAberto(true)}
@@ -58,7 +58,7 @@ export function Conta() {
             <span className="block truncate text-[11.5px] text-ink-secondary">
               {sincronizando ? "Sincronizando…" : "Sincronizado"}
             </span>
-            <span className="block truncate text-[10.5px] text-ink-faint">{sessao.email}</span>
+            <span className="block truncate text-[10.5px] text-ink-faint">{usuario.email}</span>
           </span>
         </button>
       ) : (
@@ -77,7 +77,7 @@ export function Conta() {
 }
 
 function Painel({ aoFechar }: { aoFechar: () => void }) {
-  const { sessao } = useRegistros();
+  const { usuario } = useRegistros();
 
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => e.key === "Escape" && aoFechar();
@@ -111,7 +111,7 @@ function Painel({ aoFechar }: { aoFechar: () => void }) {
         </button>
 
         <div className="relative">
-          {sessao ? <Conectado aoFechar={aoFechar} /> : <Formulario />}
+          {usuario ? <Conectado aoFechar={aoFechar} /> : <Formulario />}
         </div>
       </div>
     </div>
@@ -226,7 +226,7 @@ function Formulario() {
 }
 
 function Conectado({ aoFechar }: { aoFechar: () => void }) {
-  const { sessao, sincronizando } = useRegistros();
+  const { usuario, sincronizando } = useRegistros();
   const [pendentes] = useState(() => contarLocaisPendentes());
   const [estado, setEstado] = useState<"pronto" | "subindo" | "feito">("pronto");
   const [erro, setErro] = useState<string | null>(null);
@@ -252,7 +252,7 @@ function Conectado({ aoFechar }: { aoFechar: () => void }) {
       >
         Sua conta
       </h2>
-      <p className="mt-2.5 text-[13.5px] text-ink-secondary">{sessao?.email}</p>
+      <p className="mt-2.5 text-[13.5px] text-ink-secondary">{usuario?.email}</p>
       <p className="mt-1 text-[12px] text-ink-muted">
         {sincronizando
           ? "Buscando os seus registros…"

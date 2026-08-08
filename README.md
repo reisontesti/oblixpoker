@@ -22,7 +22,8 @@ Dark-only por decisão de produto. Interface inteira em pt-BR.
 | `/` | Dashboard completo |
 | `/satelites` | Análise de satélites completa |
 | `/torneios` | Histórico com filtros; apaga só o que você registrou |
-| `/torneios/novo` | Registro em 4 etapas, com o pedido de apoio ao final |
+| `/torneios/novo` | Preparo do torneio; daqui sai a sessão ao vivo ou o lançamento retroativo |
+| `/torneios/ao-vivo` | **Sessão ao vivo** — cronômetro, intervalos e a curva do stack |
 | `/jogadores` | Banco de adversários: busca, edição e registro de campo |
 | `/mesa` | **Modo Mesa** — as leituras dos adversários sentados com você |
 | `/diario` | Check-in pré-jogo, fecho da sessão e o cruzamento estado × resultado |
@@ -261,6 +262,58 @@ de sentar deixava de contar como "hoje".
 
 ---
 
+## A sessão ao vivo
+
+O registro retroativo continua existindo — quem lança o torneio de ontem precisa
+dele. Mas o caminho principal agora acompanha o torneio **enquanto ele
+acontece**: o jogador marca como chegou, inicia quando a primeira mão é
+distribuída e registra o stack a cada intervalo.
+
+### Big blinds, nunca fichas
+
+Quarenta mil fichas é uma montanha no nível 3 e é desespero no nível 18. Quem
+joga torneio pensa em "tenho 22 blinds", porque é isso que decide se dá para
+esperar mão ou se já é hora de empurrar.
+
+Um gráfico de fichas subiria a sessão inteira mesmo com o jogador afundando —
+os blinds crescem junto —, medindo a estrutura do torneio em vez do desempenho
+de alguém. [`conferir-sessao.mts`](scripts/conferir-sessao.mts) fixa isso com o
+caso que torna o erro visível: fichas de 40k para 60k enquanto o stack cai de 80
+para 15 blinds.
+
+A segunda régua é **quanto do campo já saiu**. Perder metade das fichas enquanto
+metade do campo é eliminado não é perder terreno; é ficar no mesmo lugar. As
+duas vão em pequenos múltiplos com escala própria, nunca num segundo eixo y —
+sobrepô-las faria o cruzamento das linhas parecer significado.
+
+### O que o formato ao vivo torna desnecessário perguntar
+
+- **Duração** sai do cronômetro, não da memória de quem acabou de ser eliminado
+  às três da manhã.
+- **Energia** é respondida no começo, quando ainda descreve como a pessoa
+  chegou. Perguntada no fim seria recordação contaminada pelo resultado — e é
+  justamente essa a variável que o Oblix cruza com o desempenho.
+
+### Três decisões de uso
+
+**Nada é obrigatório num intervalo.** A tela é usada em pé, com dez minutos e
+uma fila do banheiro. Um formulário exigente faria o jogador parar de registrar
+no terceiro intervalo, e meia sessão anotada vale mais que nenhuma.
+
+**Cada parada é gravada na hora.** O app passa seis horas indo para segundo
+plano no bolso de alguém; perder o histórico do torneio inteiro por um refresh
+acidental faria a feature nunca mais ser usada.
+
+**A sessão vive no aparelho, não na conta.** Ninguém começa um torneio no
+celular e termina no computador — é a mesma razão pela qual o Modo Mesa não
+sincroniza. O que sobe para o Postgres é o torneio pronto.
+
+O cronômetro conta a partir do instante gravado, e não somando segundos: o
+navegador congela `setInterval` em segundo plano, que é exatamente onde o Oblix
+passa a maior parte do torneio.
+
+---
+
 ## Metas e saúde técnica
 
 As duas dependem de um número que o Oblix **não tem como medir sozinho**, e cada
@@ -363,6 +416,9 @@ Para conferir os números da base:
 npx tsx scripts/conferir-dados.ts
 npx tsx scripts/conferir-vazio.ts    # a base vazia como estado de primeira classe
 npx tsx scripts/conferir-schema.mts  # o schema do Supabase, com RLS de verdade
+npx tsx scripts/conferir-mapa.mts    # domínio ↔ Postgres, em ida e volta
+npx tsx scripts/conferir-pix.mts     # o BR Code do apoio
+npx tsx scripts/conferir-sessao.mts  # a leitura da sessão ao vivo
 ```
 
 O segundo confere o oposto do primeiro: que a cadeia inteira de análise

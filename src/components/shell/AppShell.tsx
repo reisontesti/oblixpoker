@@ -99,8 +99,30 @@ function FaixaDemonstracao({ aoSair }: { aoSair: () => void }) {
   );
 }
 
+function FaixaSessao({ nome }: { nome: string }) {
+  return (
+    <Link
+      href="/torneios/ao-vivo"
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-hairline bg-[var(--color-positivo)]/12 px-4 py-2 transition-colors duration-200 hover:bg-[var(--color-positivo)]/18 sm:px-7 lg:px-10"
+    >
+      <span className="flex min-w-0 items-center gap-2 text-[12px] text-ink-secondary">
+        <span
+          aria-hidden
+          className="size-1.5 shrink-0 animate-pulse rounded-full bg-[var(--color-positivo)]"
+        />
+        <span className="truncate">
+          <strong className="font-medium text-ink">{nome}</strong> em andamento
+        </span>
+      </span>
+      <span className="shrink-0 text-[12px] font-medium text-[var(--color-positivo)]">
+        Voltar ao torneio →
+      </span>
+    </Link>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
-  const { perfil, modo, pronto, decidiu, temPerfilProprio } = useRegistros();
+  const { perfil, modo, pronto, decidiu, temPerfilProprio, sessao } = useRegistros();
   const [reaberto, setReaberto] = useState<Etapa | null>(null);
 
   // Só depois que o cliente lê a conta: antes disso, "não decidiu" é ignorância
@@ -149,6 +171,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             primeiro byte de HTML, e é aí que a faixa precisa estar. Amarrá-la
             à decisão criaria um salto de layout logo depois da hidratação. */}
         {modo === "demonstracao" && <FaixaDemonstracao aoSair={irParaMeusDados} />}
+        {/* Um torneio em andamento precisa ser reencontrável de qualquer tela:
+            o jogador abre o app no intervalo, seis horas depois de começar, e
+            não deve ter que lembrar por onde entrou. */}
+        {sessao && !sessao.finalizadaEm && <FaixaSessao nome={sessao.preparo.nome} />}
         {children}
       </div>
 

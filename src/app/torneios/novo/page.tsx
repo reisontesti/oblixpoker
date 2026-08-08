@@ -11,7 +11,13 @@ import {
   CampoTexto,
   CampoTextoLongo,
 } from "@/components/ui/Campo";
-import { registrar, registrarMedicao, type EntradaMedicao } from "@/lib/data/repositorio";
+import {
+  iniciarSessao,
+  registrar,
+  registrarMedicao,
+  type EntradaMedicao,
+} from "@/lib/data/repositorio";
+import { useRouter } from "next/navigation";
 import { moeda, moedaComSinal } from "@/lib/format";
 import { useClubes, useRegistros } from "@/lib/painel";
 import type { NivelEnergia, Torneio } from "@/lib/types";
@@ -24,6 +30,12 @@ const PASSOS = [
 ] as const;
 
 interface Formulario {
+  /**
+   * Falso enquanto o jogador ainda não escolheu entre acompanhar ao vivo e
+   * lançar retroativamente. Não é preferência guardada: é o estado de uma
+   * pergunta feita uma vez por registro.
+   */
+  jaJogou: boolean;
   data: string;
   nome: string;
   clube: string;
@@ -65,6 +77,7 @@ interface Formulario {
  * entram logo depois, quando o repositório resolve a conta.
  */
 const INICIAL: Formulario = {
+  jaJogou: false,
   data: "",
   nome: "",
   clube: "",
@@ -99,6 +112,7 @@ const INICIAL: Formulario = {
 const emMinutos = (h: number | null, m: number | null) => (h ?? 0) * 60 + (m ?? 0);
 
 export default function NovoTorneio() {
+  const router = useRouter();
   const { perfil, diaCorrente, hoje, medicoes } = useRegistros();
   const clubes = useClubes();
   const ultimaMedicao = medicoes.at(-1) ?? null;
@@ -155,7 +169,7 @@ export default function NovoTorneio() {
         e.satPosicao = "Informe a posição final";
       }
     }
-    if (passo === 2) {
+    if (passo === 2 && form.jaJogou) {
       if (!form.colocacao || form.colocacao < 1) e.colocacao = "Informe sua colocação";
       else if (form.jogadores && form.colocacao > form.jogadores) {
         e.colocacao = `Não pode ser maior que ${form.jogadores} jogadores`;
@@ -443,7 +457,73 @@ export default function NovoTorneio() {
             </>
           )}
 
-          {passo === 2 && (
+          {/* A bifurcação entre acompanhar o torneio e lançá-lo depois fica
+              aqui, no fim do preparo: é o último momento em que as duas coisas
+              ainda são a mesma tela. Acompanhar ao vivo pergunta a energia
+              AGORA, quando ela descreve como a pessoa chegou — perguntar seis
+              horas depois é recordação, não medição. */}
+          {passo === 2 && !form.jaJogou && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-[15px] font-semibold text-ink">
+                  Você vai jogar agora ou já jogou?
+                </h2>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-ink-secondary">
+                  Acompanhando ao vivo, o Oblix cronometra o torneio e guarda o seu stack a cada
+                  intervalo — no fim você recebe a curva da sua trajetória.
+                </p>
+              </div>
+
+              <EscalaEnergia valor={form.energia} aoMudar={(v) => definir("energia", v)} />
+
+              <button
+                type="button"
+                onClick={() => {
+                  iniciarSessao(
+                    {
+                      data: form.data,
+                      nome: form.nome.trim(),
+                      clube: form.clube,
+                      modalidade: perfil.modalidade,
+                      buyIn: form.buyIn ?? 0,
+                      jogadores: form.jogadores ?? 0,
+                      via,
+                      satelite:
+                        form.jogouSatelite === "sim"
+                          ? {
+                              nome: form.satNome.trim() || `Satélite ${form.nome.trim()}`,
+                              clube: form.clube,
+                              data: new Date().toISOString(),
+                              buyIn: form.satBuyIn ?? 0,
+                              entradas: form.satEntradas ?? 1,
+                              jogadores: form.satJogadores ?? 0,
+                              classificou: form.satClassificou === "sim",
+                              posicao: form.satPosicao,
+                              tempoJogadoMin: emMinutos(form.satHoras, form.satMinutos),
+                              observacoes: form.satObs.trim() || undefined,
+                            }
+                          : null,
+                    },
+                    form.energia,
+                  );
+                  router.push("/torneios/ao-vivo");
+                }}
+                className="w-full cursor-pointer rounded-xl bg-[var(--color-positivo)] px-5 py-3.5 text-[14.5px] font-semibold text-plane transition-transform duration-200 hover:brightness-110 active:scale-[0.99]"
+              >
+                Iniciar torneio agora
+              </button>
+
+              <button
+                type="button"
+                onClick={() => definir("jaJogou", true)}
+                className="w-full cursor-pointer rounded-xl border border-hairline px-5 py-3 text-[13.5px] font-medium text-ink-secondary transition-colors duration-200 hover:border-hairline-strong hover:text-ink"
+              >
+                Já joguei — lançar o resultado
+              </button>
+            </div>
+          )}
+
+          {passo === 2 && form.jaJogou && (
             <>
               <div className="grid gap-5 sm:grid-cols-2">
                 <CampoNumero
@@ -598,11 +678,16 @@ export default function NovoTorneio() {
         </div>
       </section>
 
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div
+        className={`mt-5 items-center justify-between gap-3 ${
+          passo === 2 && !form.jaJogou ? "hidden" : "flex"
+        }`}
+      >
         <button
           type="button"
           onClick={() => {
             setTentouAvancar(false);
+            if (passo === 3 && form.jaJogou) return definir("jaJogou", false);
             setPasso(Math.max(0, passo - 1));
           }}
           disabled={passo === 0}
