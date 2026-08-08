@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Marca } from "@/components/shell/Marca";
+import { Botao } from "@/components/ui/Botao";
 import { CampoEscolha, CampoNumero, CampoTexto } from "@/components/ui/Campo";
 import { comecarDoZero, usarDemonstracao } from "@/lib/data/repositorio";
 import { FormularioAcesso } from "@/components/conta/Conta";
@@ -114,7 +115,12 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
       role="dialog"
       aria-modal
       aria-labelledby="bem-vindo-titulo"
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-plane/80 px-4 py-10 backdrop-blur-xl"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain px-4 py-8 backdrop-blur-xl"
+      style={{
+        background: "var(--veu)",
+        paddingBottom: "max(2rem, calc(env(safe-area-inset-bottom) + 1.5rem))",
+        paddingTop: "max(2rem, calc(env(safe-area-inset-top) + 1.5rem))",
+      }}
     >
       <div className="placa grao surgir relative w-full max-w-[34rem] px-6 py-8 sm:px-9 sm:py-10">
         <div aria-hidden className="grao-camada rounded-[20px]" />
@@ -130,7 +136,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
             type="button"
             onClick={aoFechar}
             aria-label="Fechar"
-            className="absolute top-4 right-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
+            className="absolute top-2.5 right-2.5 z-10 grid size-11 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
           >
             <span aria-hidden className="text-[15px] leading-none">
               ×
@@ -144,7 +150,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
               <Marca tamanho={34} />
               <h1
                 id="bem-vindo-titulo"
-                className="mt-6 text-[28px] leading-[1.15] font-semibold tracking-[-0.025em] text-ink sm:text-[32px]"
+                className="texto-display mt-6 text-ink"
               >
                 Bem-vindo ao Oblix
               </h1>
@@ -178,7 +184,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
                 <button
                   type="button"
                   onClick={() => setEtapa("entrar")}
-                  className="mt-6 w-full cursor-pointer text-[12.5px] text-ink-secondary transition-colors duration-200 hover:text-ink"
+                  className="mt-5 flex min-h-[var(--toque)] w-full cursor-pointer items-center justify-center rounded-xl text-[13px] text-ink-secondary transition-colors duration-200 hover:bg-realce hover:text-ink"
                 >
                   Já tenho conta — <span className="font-medium text-ink">entrar</span>
                 </button>
@@ -195,7 +201,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
               <button
                 type="button"
                 onClick={() => setEtapa("escolha")}
-                className="cursor-pointer text-[12.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
+                className="-ml-2.5 flex min-h-[var(--toque)] cursor-pointer items-center rounded-lg px-2.5 text-[12.5px] text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
               >
                 ← Voltar
               </button>
@@ -208,14 +214,14 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
               <button
                 type="button"
                 onClick={() => setEtapa("escolha")}
-                className="cursor-pointer text-[12.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
+                className="-ml-2.5 flex min-h-[var(--toque)] cursor-pointer items-center rounded-lg px-2.5 text-[12.5px] text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
               >
                 ← Voltar
               </button>
 
               <h1
                 id="bem-vindo-titulo"
-                className="mt-5 text-[26px] leading-[1.15] font-semibold tracking-[-0.025em] text-ink sm:text-[29px]"
+                className="texto-display mt-4 text-ink"
               >
                 Vamos abrir a sua banca
               </h1>
@@ -268,13 +274,9 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={concluir}
-                className="mt-8 w-full cursor-pointer rounded-xl bg-[var(--color-positivo)] px-5 py-3 text-[14px] font-semibold text-plane transition-transform duration-200 hover:brightness-110 active:scale-[0.985]"
-              >
+              <Botao tom="primario" tamanho="grande" largo className="mt-8" aoClicar={concluir}>
                 Abrir meu painel
-              </button>
+              </Botao>
 
               <p className="mt-4 text-[12px] leading-relaxed text-ink-muted">
                 O painel vai abrir vazio — é assim que tem que ser. Ele preenche sozinho conforme

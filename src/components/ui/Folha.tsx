@@ -116,7 +116,14 @@ export function Folha({
           <span className="mx-auto block h-1 w-9 rounded-full bg-hairline-strong" />
         </div>
 
-        <header className="relative flex items-start justify-between gap-4 px-5 pt-4 pb-3 sm:px-7 sm:pt-6">
+        {/* Sem título visível, o cabeçalho encolhe até virar só o botão de
+            fechar. Mantê-lo com a altura de um título que ninguém vê abria uma
+            faixa vazia de 60px no topo da folha. */}
+        <header
+          className={`relative flex items-start justify-between gap-4 px-5 sm:px-7 ${
+            tituloOculto ? "pt-1 pb-0 sm:pt-4" : "pt-4 pb-3 sm:pt-6"
+          }`}
+        >
           <div className="min-w-0">
             <h2
               id={`${id}-titulo`}
@@ -124,9 +131,7 @@ export function Folha({
             >
               {titulo}
             </h2>
-            {descricao && (
-              <p className="texto-apoio mt-2 text-ink-secondary">{descricao}</p>
-            )}
+            {descricao && <p className="texto-apoio mt-2 text-ink-secondary">{descricao}</p>}
           </div>
           <button
             type="button"

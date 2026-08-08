@@ -1,19 +1,30 @@
 /**
- * Registro das decisões de cor do Oblix.
+ * Registro das decisões de cor do Oblix, e os tokens que os gráficos usam.
  *
- * Toda cor de dado aqui foi passada pelo validador de paleta (modo dark,
- * superfície #0E1011). Resultados registrados para não serem re-derivados:
+ * Os VALORES moram em `globals.css` — em dois temas. Aqui ficam os nomes e o
+ * porquê. Uma segunda tabela de hex neste arquivo divergiria da primeira no
+ * dia em que um tom fosse ajustado, e o registro passaria a documentar um
+ * produto que não existe mais.
  *
- *   Tríade em tela simultânea — jade #199e70 · azul #3987e5 · laranja #d95926
- *     --pairs all: CVD ΔE 9.4 (deutan, alvo ≥ 8) · visão normal ΔE 20.9
- *     (piso ≥ 15) · contraste 5.60 / 4.72 / 4.42 :1 — todas ≥ 3:1.
+ * O que foi apurado, para não ser re-derivado:
+ *
+ *   Tríade em tela simultânea — jade · azul · laranja
+ *     No escuro (superfície #0E1011): --pairs all, CVD ΔE 9.4 (deutan, alvo
+ *     ≥ 8) · visão normal ΔE 20.9 (piso ≥ 15) · contraste 5.60 / 5.24 / 4.91.
+ *     No claro (superfície #FFFFFF) as três matizes são outras, escurecidas:
+ *     5.34 / 6.13 / 5.84. Clarear as do escuro reprovaria — o jade cai para
+ *     3,1:1 e o âmbar para 2,2:1 sobre branco.
  *
  *   Teto de 3 séries simultâneas: nenhum conjunto de 4 matizes passa
- *   --pairs all nas faixas do modo dark. Acima de 3, dobrar em "Outros"
+ *   --pairs all nas faixas do modo escuro. Acima de 3, dobrar em "Outros"
  *   ou facetar — nunca gerar uma quarta matiz.
  *
- *   Rampa ordinal (energia): 5 passos de uma matiz, ΔL ≥ 0.06 entre
- *   vizinhos, ponta clara 2.95:1 sobre a superfície.
+ *   Rampa ordinal (energia): 5 passos de uma matiz, monótona em luminância
+ *   dentro de cada tema, ΔL ≥ 0.03 entre vizinhos, e as duas pontas ≥ 3:1
+ *   contra a superfície. A DIREÇÃO inverte entre os temas, de propósito.
+ *
+ * `scripts/conferir-contraste.mts` reconfere tudo isto lendo o CSS, e é ele —
+ * não este comentário — que impede a regressão.
  *
  * Divisão de papéis — o ponto que evita ambiguidade no produto:
  *   · jade / vermelho / âmbar são ESTADO (lucro, prejuízo, atenção). Nunca
@@ -21,36 +32,17 @@
  *   · azul e laranja são IDENTIDADE (entrada direta × via satélite) e não
  *     carregam juízo de bom/ruim — é justamente o que o produto quer
  *     descobrir dos dados, então a cor não pode antecipar a resposta.
- *   · conquista (título, mesa final) não recebe matiz: recebe LUZ — tinta
- *     branca e brilho. Evita disputar significado com o âmbar e é o que dá
- *     o acabamento premium.
+ *   · conquista (título, mesa final) usa o âmbar com rótulo escrito. Antes
+ *     era "luz" — tinta branca com brilho —, que só existe no escuro: sobre
+ *     o tema claro a única marca de um título vencido desaparecia.
  */
 
-export const CORES = {
-  positivo: "#199e70",
-  positivoDim: "#0f5f44",
-  negativo: "#e05a5a",
-  negativoDim: "#7a2f2f",
-  atencao: "#d99a1f",
-  direto: "#3987e5",
-  satelite: "#d95926",
-  superficie: "#0e1011",
-  plano: "#08090a",
-  grade: "#1c2021",
-  eixo: "#2a2f30",
-  tinta: "#f2f4f3",
-  tintaSecundaria: "#9ba3a1",
-  tintaFraca: "#6b7573",
-} as const;
-
 /**
- * As mesmas cores, por TOKEN — é isto que os componentes devem usar.
+ * As cores por TOKEN — é isto que os componentes usam.
  *
- * `CORES` acima continua sendo o registro do que foi validado no modo escuro,
- * e serve de documentação. Mas gravar aquele hex direto num `stroke` congela o
- * tema: no claro, `#74dfb8` sobre branco dá 1,3:1 e a marca de dado
- * simplesmente some. Passando pelo token, a mesma marca vira o par escurecido
- * quando o tema é claro.
+ * Gravar hex direto num `stroke` congela o tema: `#74dfb8` sobre branco dá
+ * 1,3:1 e a marca de dado simplesmente some. Passando pelo token, a mesma
+ * marca vira o par escurecido quando o tema é claro.
  *
  * Funciona em atributo de SVG (`stroke={TINTA.grade}`), e não só em `style`:
  * o Chrome resolve `var()` na camada de atributo de apresentação. Verificado

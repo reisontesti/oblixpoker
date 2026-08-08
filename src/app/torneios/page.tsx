@@ -85,19 +85,24 @@ export default function Torneios() {
           />
 
           {lista.length === 0 ? (
+            // Base vazia e filtro sem resultado são estados diferentes. Quem
+            // nunca registrou nada precisa de um convite; quem tem histórico e
+            // filtrou por "Premiados" precisa saber que basta trocar o filtro.
+            // Tratar os dois igual mandava o jogador novo "trocar o filtro"
+            // para procurar torneios que não existem.
             <Vazio
               titulo={
-                filtro === "meus"
+                dados.torneios.length === 0
                   ? "Você ainda não registrou nenhum torneio"
                   : "Nenhum torneio neste filtro"
               }
               corpo={
-                filtro === "meus"
+                dados.torneios.length === 0
                   ? "Cada torneio registrado alimenta a banca, o ROI e a leitura de satélites. O primeiro leva menos de um minuto."
                   : "Troque o filtro acima para ver o resto do histórico."
               }
               acao={
-                filtro === "meus"
+                dados.torneios.length === 0
                   ? { rotulo: "Registrar o primeiro", href: "/torneios/novo" }
                   : undefined
               }
