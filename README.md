@@ -1,7 +1,8 @@
 # Oblix
 
-Sistema operacional para jogadores de poker. Este repositório contém o MVP das
-duas primeiras entregas: o **Dashboard** e a feature de **Satélites**.
+Sistema operacional para jogadores de poker.
+
+**No ar em https://oblix-six.vercel.app**
 
 ```bash
 npm run dev     # desenvolvimento em http://localhost:3000
@@ -153,17 +154,43 @@ que ele é. Ver `registrar()` em
 
 ## Monetização
 
-O PRD pede que, ao registrar uma premiação, o produto apresente o pedido de
-apoio (5% / 10% / 15% / outro valor / agora não). Está em
-[`Conclusao.tsx`](src/components/torneios/Conclusao.tsx), e segue duas regras
+O pedido de apoio (5% / 10% / 15% / outro valor / agora não) aparece **só depois
+de uma premiação registrada** — quem não ganhou nada não é convidado a doar. Está
+em [`Conclusao.tsx`](src/components/torneios/Conclusao.tsx), e segue duas regras
 deliberadas:
 
 - **"Agora não" é um botão de verdade** — mesmo tamanho, mesmo contraste, ao
   lado do botão de apoiar. Um produto gratuito que esconde a saída do pedido de
   doação deixa de parecer gratuito.
-- **Nada é cobrado e nada é simulado.** Não há integração de pagamento ligada; a
-  tela de agradecimento diz isso com todas as letras em vez de encenar uma
-  transação que não aconteceu.
+- **Nada é cobrado automaticamente.** O apoio é um Pix voluntário, iniciado pelo
+  jogador no aplicativo do banco dele. Nenhuma funcionalidade fica atrás de
+  pagamento.
+
+### Por que BR Code, e não a chave
+
+Mostrar a chave crua transferiria para o jogador digitar um telefone no banco e
+preencher o valor à mão. Um dígito errado manda dinheiro para um estranho, e
+ninguém revisa isso com atenção depois de ganhar um torneio às duas da manhã. O
+código copia e cola já leva destinatário e valor dentro.
+
+Ele é montado em [`pix.ts`](src/lib/pix.ts), sem biblioteca: são os campos EMV
+que o Banco Central especifica e um CRC-16/CCITT-FALSE. Copia e cola vem antes do
+QR porque o Oblix é usado no celular dentro do clube, e ninguém escaneia o QR da
+própria tela.
+
+```bash
+npx tsx scripts/conferir-pix.mts
+```
+
+O teste ataca o que pode dar errado sem falhar de forma visível — código
+malformado só faz o banco dizer "inválido", e o jogador desiste. Confere o vetor
+canônico da variante (`123456789` → `29B1`), a normalização de telefone para
+`+55DDDNUMERO` e o fechamento do CRC sobre o próprio código gerado.
+
+**A chave vive em `NEXT_PUBLIC_PIX_CHAVE`, fora do repositório.** É dado pessoal
+de quem mantém o Oblix, e telefone em repo público é alimento de raspador. Sem a
+variável, o bloco de apoio não aparece: melhor não oferecer do que oferecer um
+código que não leva a lugar nenhum.
 
 Sem premiação, o fecho é outro: em vez do pedido, explica por que registrar um
 torneio sem prêmio também vale — ele entra no ROI, na leitura de energia e na
