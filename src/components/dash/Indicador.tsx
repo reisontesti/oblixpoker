@@ -59,7 +59,7 @@ export function Indicador({
 
         {medidor !== undefined && (
           <div className="mt-4">
-            <div className="h-1 overflow-hidden rounded-full bg-white/7">
+            <div className="h-1 overflow-hidden rounded-full bg-trilho">
               <div
                 className="h-full rounded-full bg-[var(--color-positivo)] transition-[width] duration-[1.2s] ease-[var(--ease-out-quint)]"
                 style={{ width: `${Math.min(100, medidor * 100)}%` }}

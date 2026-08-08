@@ -31,7 +31,7 @@ export function Energia({ faixas, porVia, atraso = 0 }: Props) {
         titulo="Energia e profundidade"
         descricao="Com que disposição você senta na mesa, e onde isso te deixa no campo"
         acessorio={
-          <span className="flex items-center gap-3.5 text-[11.5px] text-ink-secondary">
+          <span className="flex items-center gap-3.5 text-[12px] text-ink-secondary">
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
@@ -53,10 +53,10 @@ export function Energia({ faixas, porVia, atraso = 0 }: Props) {
       />
 
       <div className="px-6 pb-6 sm:px-7">
-        <div className="grid grid-cols-[auto_1fr_1fr] gap-x-4 sm:gap-x-6">
+        <div className="grid grid-cols-[minmax(0,auto)_1fr_1fr] gap-x-2.5 sm:gap-x-6">
           <span />
-          <span className="rotulo pb-2">Torneios por via</span>
-          <span className="rotulo pb-2">Profundidade média no campo</span>
+          <span className="rotulo pb-2">Por via</span>
+          <span className="rotulo pb-2">Profundidade no campo</span>
 
           {ordenadas.map((faixa, i) => {
             const via = viaPorNivel.get(faixa.nivel);
@@ -68,7 +68,7 @@ export function Energia({ faixas, porVia, atraso = 0 }: Props) {
 
             return (
               <div key={faixa.nivel} className="contents">
-                <span className="border-t border-hairline py-3 text-[12.5px] whitespace-nowrap text-ink-secondary">
+                <span className="border-t border-hairline py-3 text-[12.5px] leading-tight text-ink-secondary sm:whitespace-nowrap">
                   {ROTULO_ENERGIA[faixa.nivel]}
                 </span>
 
@@ -98,7 +98,7 @@ export function Energia({ faixas, porVia, atraso = 0 }: Props) {
                 </span>
 
                 <span className="flex items-center gap-2.5 border-t border-hairline py-3">
-                  <span className="relative h-[12px] flex-1 overflow-hidden rounded-[3px] bg-white/5">
+                  <span className="relative h-[12px] flex-1 overflow-hidden rounded-[3px] bg-trilho">
                     <span
                       className="absolute inset-y-0 left-0 rounded-[3px] transition-[width] duration-[1s] ease-[var(--ease-out-quint)]"
                       style={{
@@ -117,7 +117,7 @@ export function Energia({ faixas, porVia, atraso = 0 }: Props) {
           })}
         </div>
 
-        <p className="mt-4 border-t border-hairline pt-3.5 text-[11.5px] leading-relaxed text-ink-muted">
+        <p className="mt-4 border-t border-hairline pt-3.5 text-[12px] leading-relaxed text-ink-muted">
           Profundidade é a fração do campo que ficou atrás de você: 100% seria
           vencer, 0% seria o primeiro eliminado. Ela usa todos os torneios, e
           não só os premiados, então move devagar e diz a verdade mesmo com

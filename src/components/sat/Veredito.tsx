@@ -48,7 +48,7 @@ function Parcela({
       >
         {moedaComSinal(valor)}
       </p>
-      <p className="mt-1 text-[11.5px] leading-snug text-ink-muted">{descricao}</p>
+      <p className="mt-1 text-[12px] leading-snug text-ink-muted">{descricao}</p>
     </div>
   );
 }
@@ -81,7 +81,7 @@ export function Veredito({
 
       <div className="relative px-6 py-7 sm:px-8 sm:py-9">
         <span
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11.5px] font-medium"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[12px] font-medium"
           style={{
             color: estilo.cor,
             background: "color-mix(in oklab, currentColor 13%, transparent)",

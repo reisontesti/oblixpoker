@@ -34,7 +34,7 @@ export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: str
   return (
     <section className="placa surgir grao relative overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute -inset-px overflow-hidden rounded-[20px]">
-        <div className="absolute -top-52 left-1/4 h-96 w-[42rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(25,158,112,0.18),transparent)] blur-3xl" />
+        <div className="absolute -top-52 left-1/4 h-96 w-[42rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--color-positivo)_18%,transparent),transparent)] blur-3xl" />
       </div>
       <div aria-hidden className="grao-camada rounded-[20px]" />
 
@@ -50,7 +50,7 @@ export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: str
               <button
                 type="button"
                 onClick={() => setAjustando(true)}
-                className="cursor-pointer rounded-md px-1.5 py-0.5 text-[10.5px] font-medium text-ink-muted transition-colors duration-200 hover:bg-white/6 hover:text-ink"
+                className="-my-2 min-h-[var(--toque)] cursor-pointer rounded-lg px-2 py-2 text-[12px] font-medium text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
               >
                 aportes e saques
               </button>
@@ -81,7 +81,7 @@ export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: str
               <dd className="numeros-tabulares mt-2 text-[19px] font-medium text-ink">
                 {moeda(pico)}
               </dd>
-              <dd className="mt-0.5 text-[11.5px] text-ink-muted">
+              <dd className="mt-0.5 text-[12px] text-ink-muted">
                 {/* Com um evento só, "você está no topo" é verdade vazia: o
                     topo e o fundo são o mesmo ponto. */}
                 {serie.length <= 1
@@ -101,7 +101,7 @@ export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: str
               >
                 {moedaComSinal(geral.lucro)}
               </dd>
-              <dd className="mt-0.5 text-[11.5px] text-ink-muted">
+              <dd className="mt-0.5 text-[12px] text-ink-muted">
                 em {geral.torneios} torneios
               </dd>
             </div>

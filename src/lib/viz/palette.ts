@@ -43,13 +43,50 @@ export const CORES = {
   tintaFraca: "#6b7573",
 } as const;
 
-/** Rampa ordinal de energia, do mais cansado ao mais descansado. */
+/**
+ * As mesmas cores, por TOKEN — é isto que os componentes devem usar.
+ *
+ * `CORES` acima continua sendo o registro do que foi validado no modo escuro,
+ * e serve de documentação. Mas gravar aquele hex direto num `stroke` congela o
+ * tema: no claro, `#74dfb8` sobre branco dá 1,3:1 e a marca de dado
+ * simplesmente some. Passando pelo token, a mesma marca vira o par escurecido
+ * quando o tema é claro.
+ *
+ * Funciona em atributo de SVG (`stroke={TINTA.grade}`), e não só em `style`:
+ * o Chrome resolve `var()` na camada de atributo de apresentação. Verificado
+ * em tela, nos dois temas.
+ */
+export const TINTA = {
+  positivo: "var(--color-positivo)",
+  positivoDim: "var(--color-positivo-dim)",
+  negativo: "var(--color-negativo)",
+  negativoDim: "var(--color-negativo-dim)",
+  atencao: "var(--color-atencao)",
+  direto: "var(--color-direto)",
+  satelite: "var(--color-satelite)",
+  superficie: "var(--color-card)",
+  plano: "var(--color-plane)",
+  grade: "var(--color-grid)",
+  eixo: "var(--color-axis)",
+  tinta: "var(--color-ink)",
+  tintaSecundaria: "var(--color-ink-secondary)",
+  tintaFraca: "var(--color-ink-muted)",
+} as const;
+
+/**
+ * Rampa ordinal de energia, do mais cansado ao mais descansado.
+ *
+ * A DIREÇÃO se inverte entre os temas, e é de propósito: no escuro, mais
+ * energia é mais clara; no claro, mais energia é mais saturada. Manter o hex
+ * fixo deixaria o passo "muito descansado" quase invisível sobre branco — que
+ * é justamente a faixa onde o jogador vai bem e o produto precisa mostrar.
+ */
 export const RAMPA_ENERGIA = [
-  "#146b4e",
-  "#178d63",
-  "#1cae7b",
-  "#38c795",
-  "#74dfb8",
+  "var(--color-energia-1)",
+  "var(--color-energia-2)",
+  "var(--color-energia-3)",
+  "var(--color-energia-4)",
+  "var(--color-energia-5)",
 ] as const;
 
 /** Especificações fixas de marca, iguais em todo gráfico. */

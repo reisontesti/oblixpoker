@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { anunciar } from "@/components/ui/Aviso";
+import { Botao } from "@/components/ui/Botao";
 import { CampoNumero, CampoTexto } from "@/components/ui/Campo";
+import { useConfirmacao } from "@/components/ui/Confirmar";
+import { Folha } from "@/components/ui/Folha";
 import { Vazio } from "@/components/ui/Vazio";
 import {
   atualizarMovimento,
@@ -28,87 +32,66 @@ import type { MovimentoBankroll } from "@/lib/types";
 export function Banca({ aoFechar }: { aoFechar: () => void }) {
   const { movimentos, modo } = useRegistros();
   const [editando, setEditando] = useState<MovimentoBankroll | "novo" | null>(null);
-
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === "Escape" && aoFechar();
-    window.addEventListener("keydown", aoTeclar);
-    const anterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", aoTeclar);
-      document.body.style.overflow = anterior;
-    };
-  }, [aoFechar]);
+  const { dialogo, confirmar } = useConfirmacao();
 
   const total = movimentos.reduce((a, m) => a + (m.tipo === "aporte" ? m.valor : -m.valor), 0);
 
   return (
-    <div
-      role="dialog"
-      aria-modal
-      aria-labelledby="banca-titulo"
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-plane/80 px-4 py-10 backdrop-blur-xl"
-    >
-      <div className="placa grao surgir relative w-full max-w-[32rem] px-6 py-7 sm:px-8">
-        <div aria-hidden className="grao-camada rounded-[20px]" />
-        <button
-          type="button"
-          onClick={aoFechar}
-          aria-label="Fechar"
-          className="absolute top-4 right-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-200 hover:bg-white/6 hover:text-ink"
-        >
-          <span aria-hidden className="text-[15px] leading-none">
-            ×
-          </span>
-        </button>
+    <>
+      <Folha
+        titulo={editando ? "Movimentação" : "Aportes e saques"}
+        descricao={
+          editando
+            ? undefined
+            : "Dinheiro que entra ou sai da banca sem ser resultado de poker. Registrar mantém a curva honesta — sem isso, um saque aparece como prejuízo e um aporte como lucro."
+        }
+        largura="media"
+        aoFechar={aoFechar}
+        rodape={
+          editando ? undefined : (
+            <Botao tom="primario" largo aoClicar={() => setEditando("novo")}>
+              Registrar aporte ou saque
+            </Botao>
+          )
+        }
+      >
+        {editando ? (
+          <Formulario
+            movimento={editando === "novo" ? null : editando}
+            aoConcluir={() => setEditando(null)}
+          />
+        ) : (
+          <>
+            <div className="flex items-baseline justify-between gap-3 rounded-xl border border-hairline bg-sunken px-4 py-3">
+              <span className="text-[12.5px] text-ink-secondary">Aportado menos sacado</span>
+              <span className="numeros-tabulares text-[16px] font-semibold text-ink">
+                {moeda(total)}
+              </span>
+            </div>
 
-        <div className="relative">
-          <h2
-            id="banca-titulo"
-            className="text-[20px] leading-tight font-semibold tracking-[-0.02em] text-ink"
-          >
-            Aportes e saques
-          </h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-ink-secondary">
-            Dinheiro que entra ou sai da banca sem ser resultado de poker. Registrar mantém a
-            curva honesta — sem isso, um saque aparece como prejuízo e um aporte como lucro.
-          </p>
-
-          {editando ? (
-            <Formulario
-              movimento={editando === "novo" ? null : editando}
-              aoConcluir={() => setEditando(null)}
-            />
-          ) : (
-            <>
-              <div className="mt-5 flex items-baseline justify-between gap-3 rounded-xl border border-hairline bg-sunken px-4 py-3">
-                <span className="text-[12.5px] text-ink-secondary">Aportado menos sacado</span>
-                <span className="numeros-tabulares text-[16px] font-semibold text-ink">
-                  {moeda(total)}
-                </span>
-              </div>
-
-              {movimentos.length === 0 ? (
-                <Vazio
-                  titulo="Nenhuma movimentação registrada"
-                  corpo="O primeiro aporte é a sua banca inicial. A partir dele, a curva do painel passa a ter um ponto de partida real."
-                />
-              ) : (
-                <ul className="mt-4 divide-y divide-hairline">
-                  {[...movimentos].reverse().map((m) => {
-                    const proprio = ehRegistroProprio(m.id);
-                    return (
-                      <li key={m.id} className="flex items-baseline gap-3 py-3">
+            {movimentos.length === 0 ? (
+              <Vazio
+                titulo="Nenhuma movimentação registrada"
+                corpo="O primeiro aporte é a sua banca inicial. A partir dele, a curva do painel passa a ter um ponto de partida real."
+              />
+            ) : (
+              <ul className="mt-2 divide-y divide-hairline">
+                {[...movimentos].reverse().map((m) => {
+                  const proprio = ehRegistroProprio(m.id);
+                  return (
+                    <li key={m.id} className="py-3">
+                      <div className="flex items-baseline gap-3">
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] text-ink">
+                          <span className="block truncate text-[13.5px] text-ink">
                             {m.descricao || (m.tipo === "aporte" ? "Aporte" : "Saque")}
                           </span>
-                          <span className="block text-[11.5px] text-ink-muted">
+                          <span className="block text-[12px] text-ink-muted">
                             {dataMedia(m.data)}
+                            {!proprio && " · demonstração"}
                           </span>
                         </span>
                         <span
-                          className="numeros-tabulares shrink-0 text-[13.5px] font-medium"
+                          className="numeros-tabulares shrink-0 text-[14px] font-medium"
                           style={{
                             color:
                               m.tipo === "aporte"
@@ -119,51 +102,53 @@ export function Banca({ aoFechar }: { aoFechar: () => void }) {
                           {m.tipo === "aporte" ? "+" : "−"}
                           {moeda(m.valor)}
                         </span>
-                        {proprio ? (
-                          <span className="flex shrink-0 gap-2.5">
-                            <button
-                              type="button"
-                              onClick={() => setEditando(m)}
-                              className="cursor-pointer text-[11.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
-                            >
-                              editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removerMovimento(m.id)}
-                              className="cursor-pointer text-[11.5px] text-ink-faint transition-colors duration-200 hover:text-[var(--color-negativo)]"
-                            >
-                              apagar
-                            </button>
-                          </span>
-                        ) : (
-                          <span className="shrink-0 text-[11px] text-ink-faint">demonstração</span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                      </div>
 
-              <button
-                type="button"
-                onClick={() => setEditando("novo")}
-                className="mt-5 w-full cursor-pointer rounded-xl bg-[var(--color-positivo)] px-5 py-3 text-[14px] font-semibold text-plane transition-transform duration-200 hover:brightness-110 active:scale-[0.99]"
-              >
-                Registrar aporte ou saque
-              </button>
+                      {/* Visíveis, não escondidas atrás de hover: no celular
+                          "hover" não acontece, e sem elas não havia como
+                          corrigir um valor digitado errado. */}
+                      {proprio && (
+                        <div className="mt-1 flex gap-1">
+                          <Botao tom="discreto" aoClicar={() => setEditando(m)}>
+                            Editar
+                          </Botao>
+                          <Botao
+                            tom="discreto"
+                            aoClicar={() =>
+                              confirmar({
+                                titulo: `Apagar este ${m.tipo}?`,
+                                corpo: `${moeda(m.valor)} de ${
+                                  m.tipo === "aporte" ? "aporte" : "saque"
+                                } saem da curva de banca. Não há como desfazer.`,
+                                rotuloAcao: "Apagar movimentação",
+                                aoConfirmar: () => {
+                                  removerMovimento(m.id);
+                                  anunciar("Movimentação apagada.", "neutro");
+                                },
+                              })
+                            }
+                          >
+                            Apagar
+                          </Botao>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
 
-              {modo === "demonstracao" && (
-                <p className="mt-3 text-[11.5px] leading-relaxed text-ink-muted">
-                  As movimentações da base de demonstração são leitura. O que você registrar aqui
-                  entra por cima e pode ser editado.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+            {modo === "demonstracao" && (
+              <p className="mt-4 text-[12px] leading-relaxed text-ink-muted">
+                As movimentações da base de demonstração são leitura. O que você registrar aqui
+                entra por cima e pode ser editado.
+              </p>
+            )}
+          </>
+        )}
+      </Folha>
+      {dialogo}
+    </>
   );
 }
 
@@ -196,12 +181,17 @@ function Formulario({
     };
     if (movimento) atualizarMovimento(movimento.id, entrada);
     else registrarMovimento(entrada);
+    anunciar(movimento ? "Movimentação atualizada." : `${tipo === "aporte" ? "Aporte" : "Saque"} registrado.`);
     aoConcluir();
   }
 
   return (
-    <div className="mt-5 space-y-4">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="space-y-4">
+      <div
+        role="radiogroup"
+        aria-label="Tipo de movimentação"
+        className="grid grid-cols-2 gap-2"
+      >
         {(["aporte", "saque"] as const).map((t) => (
           <button
             key={t}
@@ -209,7 +199,7 @@ function Formulario({
             role="radio"
             aria-checked={tipo === t}
             onClick={() => setTipo(t)}
-            className={`cursor-pointer rounded-xl border px-3 py-2.5 text-[13.5px] font-medium transition-all duration-200 ${
+            className={`min-h-[var(--toque)] cursor-pointer rounded-xl border px-3 text-[14px] font-medium transition-all duration-200 ${
               tipo === t
                 ? "border-transparent bg-raised text-ink ring-1 ring-[var(--color-positivo)]"
                 : "border-hairline text-ink-secondary hover:border-hairline-strong"
@@ -240,21 +230,13 @@ function Formulario({
         placeholder={tipo === "aporte" ? "Banca inicial" : "Saque de lucro"}
       />
 
-      <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          onClick={salvar}
-          className="flex-1 cursor-pointer rounded-xl bg-[var(--color-positivo)] px-4 py-2.5 text-[13.5px] font-semibold text-plane transition-opacity duration-200 hover:opacity-90"
-        >
-          {movimento ? "Salvar alteração" : "Registrar"}
-        </button>
-        <button
-          type="button"
-          onClick={aoConcluir}
-          className="cursor-pointer rounded-xl border border-hairline px-4 py-2.5 text-[13.5px] font-medium text-ink-secondary transition-colors duration-200 hover:text-ink"
-        >
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row">
+        <Botao tom="discreto" aoClicar={aoConcluir}>
           Cancelar
-        </button>
+        </Botao>
+        <Botao tom="primario" largo aoClicar={salvar}>
+          {movimento ? "Salvar alteração" : "Registrar"}
+        </Botao>
       </div>
     </div>
   );

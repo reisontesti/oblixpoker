@@ -71,7 +71,7 @@ export function Comparativo({ comp, atraso = 0 }: { comp: Comparacao; atraso?: n
         acessorio={
           // Duas séries: legenda sempre presente. A identidade nunca depende
           // só da cor — cada painel também rotula a linha.
-          <span className="flex items-center gap-3.5 text-[11.5px] text-ink-secondary">
+          <span className="flex items-center gap-3.5 text-[12px] text-ink-secondary">
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
@@ -106,7 +106,7 @@ export function Comparativo({ comp, atraso = 0 }: { comp: Comparacao; atraso?: n
           ))}
         </div>
 
-        <p className="mt-4 border-t border-hairline pt-3.5 text-[11.5px] leading-relaxed text-ink-muted">
+        <p className="mt-4 border-t border-hairline pt-3.5 text-[12px] leading-relaxed text-ink-muted">
           Cada painel tem escala própria porque as unidades são diferentes.
           Comparar reais com percentuais num eixo só criaria uma relação que
           não existe nos dados.

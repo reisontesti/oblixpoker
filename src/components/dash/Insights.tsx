@@ -41,7 +41,7 @@ export function Insights({ insights, atraso = 0 }: { insights: Insight[]; atraso
               {/* Ponto de estado com ícone: a cor nunca informa sozinha. */}
               <span
                 aria-hidden
-                className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[12px] font-bold"
                 style={{
                   color: tom.cor,
                   background: "color-mix(in oklab, currentColor 14%, transparent)",
@@ -54,7 +54,7 @@ export function Insights({ insights, atraso = 0 }: { insights: Insight[]; atraso
                   <span className="text-[13.5px] leading-snug font-medium text-ink">
                     {insight.titulo}
                   </span>
-                  <span className="rounded-full border border-hairline px-2 py-0.5 text-[10px] tracking-wide text-ink-muted">
+                  <span className="rounded-full border border-hairline px-2 py-0.5 text-[12px] tracking-wide text-ink-muted">
                     {insight.categoria}
                   </span>
                   <span className="sr-only">{tom.leitura}</span>

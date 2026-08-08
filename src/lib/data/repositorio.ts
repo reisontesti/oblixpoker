@@ -211,6 +211,7 @@ const PERFIL_NEUTRO: Perfil = {
   buyInPadrao: 100,
   bankrollInicial: "R$ 0",
   desde: new Date(0).toISOString(),
+  foto: null,
 };
 
 interface Base {
@@ -840,6 +841,18 @@ export async function migrarLocaisParaNuvem(): Promise<string | null> {
   if (base) locais = base.registros;
   avisar();
   return null;
+}
+
+/**
+ * Tudo o que o jogador registrou na base própria, cru.
+ *
+ * Serve à Privacidade: "baixar uma cópia" e "quantos registros existem" só
+ * fazem sentido sobre os dados PRÓPRIOS. `Estado.proprios` conta torneios e é
+ * o suficiente para a interface, mas não para exportar — e ler a base semeada
+ * junto entregaria a demonstração dentro do arquivo do jogador.
+ */
+export function lerProprios(): Registros {
+  return ler("proprio");
 }
 
 /** Quantos registros locais esperam por uma conta. */

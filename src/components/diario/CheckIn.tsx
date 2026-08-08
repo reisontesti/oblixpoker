@@ -6,6 +6,7 @@ import { registrarCheckIn } from "@/lib/data/repositorio";
 import { OBJETIVOS } from "@/lib/data/seed";
 import { decimal, moeda, percentual } from "@/lib/format";
 import type { historicoRecuperacao } from "@/lib/calc/diario";
+import { anunciar } from "@/components/ui/Aviso";
 
 type Resposta = "sim" | "nao";
 type Fase = "perguntas" | "pausa" | "compromisso";
@@ -37,7 +38,7 @@ function Pausa({
   return (
     <div className="surgir">
       <p
-        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11.5px] font-medium"
+        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[12px] font-medium"
         style={{
           color: "var(--color-atencao)",
           background: "color-mix(in oklab, currentColor 13%, transparent)",
@@ -72,7 +73,7 @@ function Pausa({
             >
               {moeda(historico.lucroMedio)}
             </dd>
-            <dd className="text-[11px] text-ink-muted">
+            <dd className="text-[12px] text-ink-muted">
               contra {moeda(historico.lucroMedioNormal)} nos demais
             </dd>
           </div>
@@ -81,7 +82,7 @@ function Pausa({
             <dd className="numeros-tabulares mt-1.5 text-[19px] font-medium text-ink">
               {percentual(historico.profundidade * 100)}
             </dd>
-            <dd className="text-[11px] text-ink-muted">
+            <dd className="text-[12px] text-ink-muted">
               contra {percentual(historico.profundidadeNormal * 100)}
             </dd>
           </div>
@@ -90,7 +91,7 @@ function Pausa({
             <dd className="numeros-tabulares mt-1.5 text-[19px] font-medium text-ink">
               {decimal(historico.disciplina, 1)}
             </dd>
-            <dd className="text-[11px] text-ink-muted">
+            <dd className="text-[12px] text-ink-muted">
               contra {decimal(historico.disciplinaNormal, 1)}
             </dd>
           </div>
@@ -144,6 +145,7 @@ export function CheckIn({ historico, aoConcluir }: Props) {
       tentandoRecuperar: recuperar === "sim",
       objetivo: jogou ? objetivo : "Reconheci o estado e escolhi não jogar hoje.",
     });
+    anunciar(jogou ? "Check-in registrado." : "Registrado. Não jogar hoje também é decisão.");
     aoConcluir(jogou);
   }
 

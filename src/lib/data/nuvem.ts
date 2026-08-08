@@ -302,6 +302,7 @@ const perfilParaLinha = (p: Perfil, usuarioId: string): Linha => ({
   modalidade: p.modalidade,
   buy_in_padrao: p.buyInPadrao,
   desde: p.desde,
+  foto: p.foto,
 });
 
 const linhaParaPerfil = (l: Linha): Perfil => ({
@@ -313,4 +314,5 @@ const linhaParaPerfil = (l: Linha): Perfil => ({
   buyInPadrao: Number(l.buy_in_padrao ?? 100),
   bankrollInicial: "",
   desde: l.desde ? new Date(String(l.desde)).toISOString() : new Date().toISOString(),
+  foto: l.foto ? String(l.foto) : null,
 });

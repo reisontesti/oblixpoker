@@ -18,6 +18,7 @@ import { bigBlinds, curvaSessao, lerSessao, minutosDesdeInicio } from "@/lib/cal
 import { decimal, duracao, moeda, ordinal } from "@/lib/format";
 import { useRegistros } from "@/lib/painel";
 import { ROTULO_ENERGIA, type NivelEnergia } from "@/lib/types";
+import { anunciar } from "@/components/ui/Aviso";
 
 /**
  * O torneio enquanto ele acontece.
@@ -87,7 +88,7 @@ export default function AoVivo() {
         <div aria-hidden className="grao-camada rounded-[20px]" />
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[32rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(25,158,112,0.16),transparent)] blur-2xl"
+          className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[32rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--color-positivo)_16%,transparent),transparent)] blur-2xl"
         />
         <div className="relative px-6 py-7 text-center sm:px-8">
           <p className="text-[clamp(2.5rem,11vw,3.75rem)] leading-none font-semibold text-ink">
@@ -156,7 +157,7 @@ export default function AoVivo() {
             <ol className="mt-5 space-y-3 border-t border-hairline pt-4">
               {[...curva].reverse().map((p) => (
                 <li key={p.parada.id} className="flex gap-3">
-                  <span className="numeros-tabulares w-14 shrink-0 pt-0.5 text-[11.5px] text-ink-muted">
+                  <span className="numeros-tabulares w-14 shrink-0 pt-0.5 text-[12px] text-ink-muted">
                     {duracao(Math.round(p.minuto))}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -191,7 +192,7 @@ export default function AoVivo() {
                       type="button"
                       onClick={() => removerParada(p.parada.id)}
                       aria-label="Apagar este intervalo"
-                      className="shrink-0 cursor-pointer text-[11.5px] text-ink-faint transition-colors duration-200 hover:text-[var(--color-negativo)]"
+                      className="shrink-0 cursor-pointer text-[12px] text-ink-faint transition-colors duration-200 hover:text-[var(--color-negativo)]"
                     >
                       apagar
                     </button>
@@ -242,6 +243,7 @@ export default function AoVivo() {
               type="button"
               onClick={() => {
                 descartarSessao();
+                anunciar("Sessão descartada.", "neutro");
                 router.push("/torneios");
               }}
               className="cursor-pointer rounded-lg px-3 py-2 text-[12.5px] font-medium"

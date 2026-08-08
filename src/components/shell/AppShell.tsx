@@ -3,68 +3,212 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { Conta, ContaCompacta } from "@/components/conta/Conta";
+import { Conta } from "@/components/conta/Conta";
 import { BemVindo, type Etapa } from "@/components/onboarding/BemVindo";
-import { Instalar } from "@/components/shell/Instalar";
+import { Instalar, RegistrarOffline } from "@/components/shell/Instalar";
 import { Logotipo } from "@/components/shell/Marca";
-import { NAVEGACAO } from "@/components/shell/navegacao";
+import {
+  CONFIGURACOES,
+  NAVEGACAO,
+  PERFIL,
+  PRINCIPAIS,
+  SECUNDARIOS,
+  type ItemNav,
+} from "@/components/shell/navegacao";
+import { Avatar } from "@/components/ui/Avatar";
+import { Avisos, AvisosDaNuvem } from "@/components/ui/Aviso";
+import { Folha } from "@/components/ui/Folha";
 import { usarModo } from "@/lib/data/repositorio";
 import { useRegistros } from "@/lib/painel";
 
-function Itens({ compacto = false }: { compacto?: boolean }) {
+/** O item ativo inclui as subpáginas: `/torneios/novo` acende "Torneios". */
+function estaAtivo(caminho: string, href: string) {
+  return href === "/" ? caminho === "/" : caminho === href || caminho.startsWith(`${href}/`);
+}
+
+function ItensLaterais() {
   const caminho = usePathname();
 
   return (
     <>
       {NAVEGACAO.map((item) => {
-        const ativo = caminho === item.href;
-        const conteudo = (
-          <>
+        const ativo = estaAtivo(caminho, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={ativo ? "page" : undefined}
+            className={`flex min-h-[var(--toque)] items-center gap-3 rounded-xl px-3 text-[14px] font-medium transition-colors duration-200 ${
+              ativo
+                ? "bg-raised text-ink ring-1 ring-hairline-strong"
+                : "text-ink-secondary hover:bg-realce hover:text-ink"
+            }`}
+          >
             <span
               aria-hidden
               className={`transition-colors duration-200 ${ativo ? "text-[var(--color-positivo)]" : ""}`}
             >
               {item.icone}
             </span>
-            <span className={compacto ? "text-[9.5px] font-medium" : "text-[13.5px] font-medium"}>
-              {item.rotulo}
-            </span>
-          </>
+            {item.rotulo}
+          </Link>
         );
+      })}
+    </>
+  );
+}
 
-        if (item.emBreve) {
-          return (
-            <span
-              key={item.href}
-              title="Em breve"
-              aria-disabled
-              className={`flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-ink-faint ${
-                compacto ? "min-w-0 flex-1 flex-col gap-1 px-1 py-1.5" : ""
-              }`}
-            >
-              {conteudo}
-            </span>
-          );
-        }
+/**
+ * A barra do celular: quatro destinos e o "Mais".
+ *
+ * A versão anterior tinha oito alvos. A 320px isso dava 37px por item, com
+ * rótulos a 9,5px — abaixo de qualquer régua de toque e de leitura. Quatro
+ * mais um dá 60px+ de largura e 56px de altura em todo aparelho testado.
+ */
+function BarraInferior({ aoAbrirMais }: { aoAbrirMais: () => void }) {
+  const caminho = usePathname();
+  const noMais = [...SECUNDARIOS, PERFIL, CONFIGURACOES].some((i) =>
+    estaAtivo(caminho, i.href),
+  );
 
+  const classe = (ativo: boolean) =>
+    `flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-colors duration-200 ${
+      ativo ? "text-ink" : "text-ink-muted"
+    }`;
+
+  return (
+    <nav
+      aria-label="Navegação principal"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-0.5 border-t border-hairline bg-plane/90 px-1.5 pt-1.5 backdrop-blur-xl lg:hidden"
+      style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
+    >
+      {PRINCIPAIS.map((item) => {
+        const ativo = estaAtivo(caminho, item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
             aria-current={ativo ? "page" : undefined}
-            className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200 ${
-              compacto ? "min-w-0 flex-1 flex-col gap-1 px-1 py-1.5" : ""
-            } ${
-              ativo
-                ? "bg-raised text-ink ring-1 ring-white/8"
-                : "text-ink-secondary hover:bg-white/4 hover:text-ink"
-            }`}
+            className={classe(ativo)}
           >
-            {conteudo}
+            <span
+              aria-hidden
+              className={`grid size-5 place-items-center transition-colors duration-200 ${
+                ativo ? "text-[var(--color-positivo)]" : ""
+              }`}
+            >
+              {item.icone}
+            </span>
+            <span className="max-w-full truncate text-[12px] font-medium">{item.rotulo}</span>
           </Link>
         );
       })}
-    </>
+
+      <button
+        type="button"
+        onClick={aoAbrirMais}
+        aria-haspopup="dialog"
+        className={classe(noMais)}
+      >
+        <span
+          aria-hidden
+          className={`grid size-5 place-items-center transition-colors duration-200 ${
+            noMais ? "text-[var(--color-positivo)]" : ""
+          }`}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <circle cx="4.2" cy="10" r="1.5" />
+            <circle cx="10" cy="10" r="1.5" />
+            <circle cx="15.8" cy="10" r="1.5" />
+          </svg>
+        </span>
+        <span className="text-[12px] font-medium">Mais</span>
+      </button>
+    </nav>
+  );
+}
+
+function LinhaDoMenu({
+  item,
+  ativo,
+  aoIr,
+}: {
+  item: ItemNav;
+  ativo: boolean;
+  aoIr: () => void;
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={aoIr}
+      aria-current={ativo ? "page" : undefined}
+      className={`flex min-h-[56px] items-center gap-3.5 rounded-2xl px-3.5 transition-colors duration-200 ${
+        ativo ? "bg-raised text-ink ring-1 ring-hairline-strong" : "text-ink hover:bg-realce"
+      }`}
+    >
+      <span aria-hidden className="text-ink-secondary">
+        {item.icone}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14.5px] font-medium">{item.rotulo}</span>
+        {item.resumo && (
+          <span className="block truncate text-[12px] text-ink-muted">{item.resumo}</span>
+        )}
+      </span>
+      <span aria-hidden className="text-ink-faint">
+        ›
+      </span>
+    </Link>
+  );
+}
+
+/** O que não coube na barra — com resumo, porque aqui há espaço para explicar. */
+function MenuMais({ aoFechar }: { aoFechar: () => void }) {
+  const caminho = usePathname();
+  const { perfil, modo } = useRegistros();
+
+  return (
+    <Folha titulo="Mais" tituloOculto aoFechar={aoFechar} largura="estreita">
+      <Link
+        href={PERFIL.href}
+        onClick={aoFechar}
+        className="flex min-h-[64px] items-center gap-3.5 rounded-2xl border border-hairline bg-sunken px-3.5 transition-colors duration-200 hover:border-hairline-strong"
+      >
+        <Avatar nome={perfil.nome} foto={perfil.foto} tamanho={42} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-medium text-ink">{perfil.nome}</span>
+          <span className="block truncate text-[12px] text-ink-muted">
+            {modo === "demonstracao"
+              ? "Base de demonstração"
+              : `${perfil.objetivo} · ${perfil.modalidade}`}
+          </span>
+        </span>
+        <span aria-hidden className="text-ink-faint">
+          ›
+        </span>
+      </Link>
+
+      <div className="mt-4 flex flex-col gap-1">
+        {SECUNDARIOS.map((i) => (
+          <LinhaDoMenu
+            key={i.href}
+            item={i}
+            ativo={estaAtivo(caminho, i.href)}
+            aoIr={aoFechar}
+          />
+        ))}
+      </div>
+
+      {/* Configurações leva a conta junto: o painel de conta é uma folha, e
+          abrir folha de dentro de folha deixaria duas alças na tela. */}
+      <div className="mt-4 flex flex-col gap-1 border-t border-hairline pt-4">
+        <LinhaDoMenu
+          item={CONFIGURACOES}
+          ativo={estaAtivo(caminho, CONFIGURACOES.href)}
+          aoIr={aoFechar}
+        />
+      </div>
+    </Folha>
   );
 }
 
@@ -80,19 +224,18 @@ function Itens({ compacto = false }: { compacto?: boolean }) {
  */
 function FaixaDemonstracao({ aoSair }: { aoSair: () => void }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-hairline bg-raised/40 px-4 py-2 backdrop-blur-xl sm:px-7 lg:px-10">
-      <span className="flex items-center gap-2 text-[12px] text-ink-secondary">
-        <span
-          aria-hidden
-          className="size-1.5 shrink-0 rounded-full bg-[var(--color-atencao)]"
-        />
-        Você está vendo uma <strong className="font-medium text-ink">base de demonstração</strong>.
-        Nenhum destes números é seu.
+    <div className="flex flex-wrap items-center justify-between gap-x-4 border-b border-hairline bg-raised/50 pl-4 backdrop-blur-xl sm:pl-7 lg:pl-10">
+      <span className="flex items-center gap-2 py-2 text-[12.5px] text-ink-secondary">
+        <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-[var(--color-atencao)]" />
+        <span>
+          <strong className="font-medium text-ink">Demonstração</strong>
+          <span className="hidden sm:inline"> — nenhum destes números é seu.</span>
+        </span>
       </span>
       <button
         type="button"
         onClick={aoSair}
-        className="shrink-0 cursor-pointer text-[12px] font-medium text-[var(--color-positivo)] transition-opacity duration-200 hover:opacity-80"
+        className="flex min-h-[var(--toque)] shrink-0 cursor-pointer items-center px-4 text-[12.5px] font-medium text-[var(--color-positivo)] transition-colors duration-200 hover:bg-realce sm:px-7 lg:px-10"
       >
         Usar meus dados →
       </button>
@@ -104,9 +247,9 @@ function FaixaSessao({ nome }: { nome: string }) {
   return (
     <Link
       href="/torneios/ao-vivo"
-      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-hairline bg-[var(--color-positivo)]/12 px-4 py-2 transition-colors duration-200 hover:bg-[var(--color-positivo)]/18 sm:px-7 lg:px-10"
+      className="flex min-h-[38px] flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-hairline bg-[var(--color-positivo)]/12 px-4 py-1.5 transition-colors duration-200 hover:bg-[var(--color-positivo)]/18 sm:px-7 lg:px-10"
     >
-      <span className="flex min-w-0 items-center gap-2 text-[12px] text-ink-secondary">
+      <span className="flex min-w-0 items-center gap-2 text-[12.5px] text-ink-secondary">
         <span
           aria-hidden
           className="size-1.5 shrink-0 animate-pulse rounded-full bg-[var(--color-positivo)]"
@@ -115,7 +258,7 @@ function FaixaSessao({ nome }: { nome: string }) {
           <strong className="font-medium text-ink">{nome}</strong> em andamento
         </span>
       </span>
-      <span className="shrink-0 text-[12px] font-medium text-[var(--color-positivo)]">
+      <span className="shrink-0 text-[12.5px] font-medium text-[var(--color-positivo)]">
         Voltar ao torneio →
       </span>
     </Link>
@@ -125,6 +268,17 @@ function FaixaSessao({ nome }: { nome: string }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { perfil, modo, pronto, decidiu, temPerfilProprio, sessao } = useRegistros();
   const [reaberto, setReaberto] = useState<Etapa | null>(null);
+  const [mais, setMais] = useState(false);
+  const caminho = usePathname();
+
+  // Trocar de tela com o menu aberto deixaria a folha por cima do destino.
+  // Os links do menu já fecham ao serem tocados; isto cobre o resto — voltar
+  // pelo botão do navegador, um redirecionamento, um atalho de teclado.
+  const [caminhoDoMenu, setCaminhoDoMenu] = useState(caminho);
+  if (caminhoDoMenu !== caminho) {
+    setCaminhoDoMenu(caminho);
+    if (mais) setMais(false);
+  }
 
   // Só depois que o cliente lê a conta: antes disso, "não decidiu" é ignorância
   // e não resposta, e as boas-vindas piscariam a cada carregamento.
@@ -137,38 +291,61 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
-      {/* Coluna de navegação — some no mobile, onde a barra inferior assume */}
+      {/* Instalado no iPhone, o conteúdo sobe até o topo da tela. Os glifos da
+          barra de status são brancos (`black-translucent`), então esta faixa é
+          escura nos DOIS temas — no claro ela lê como moldura do aparelho. */}
+      <div
+        aria-hidden
+        className="fixed inset-x-0 top-0 z-50 bg-[#08090a]"
+        style={{ height: "env(safe-area-inset-top)" }}
+      />
+
+      {/* Coluna de navegação — some no celular, onde a barra inferior assume */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-hairline bg-plane/70 px-4 py-6 backdrop-blur-xl lg:flex">
         <Link href="/" className="mb-9 px-2">
           <Logotipo />
         </Link>
 
         <nav className="flex flex-col gap-1" aria-label="Seções do Oblix">
-          <Itens />
+          <ItensLaterais />
         </nav>
 
         <div className="mt-auto">
-          <div className="flex items-center gap-3 rounded-2xl border border-hairline bg-sunken p-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#1fb583] to-[#0f5f44] text-[13px] font-semibold text-plane">
-              {perfil.nick.slice(0, 2).toUpperCase()}
-            </span>
+          <Link
+            href={PERFIL.href}
+            className="flex items-center gap-3 rounded-2xl border border-hairline bg-sunken p-3 transition-colors duration-200 hover:border-hairline-strong"
+          >
+            <Avatar nome={perfil.nome} foto={perfil.foto} tamanho={36} />
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-medium text-ink">
                 {perfil.nome}
               </span>
-              <span className="block truncate text-[11px] text-ink-muted">
+              <span className="block truncate text-[12px] text-ink-muted">
                 {modo === "demonstracao"
                   ? "Base de demonstração"
                   : `${perfil.objetivo} · ${perfil.modalidade}`}
               </span>
             </span>
-          </div>
+          </Link>
+          <Link
+            href={CONFIGURACOES.href}
+            className={`mt-1 flex min-h-[var(--toque)] items-center gap-3 rounded-xl px-3 text-[13px] font-medium transition-colors duration-200 ${
+              estaAtivo(caminho, CONFIGURACOES.href)
+                ? "bg-raised text-ink ring-1 ring-hairline-strong"
+                : "text-ink-secondary hover:bg-realce hover:text-ink"
+            }`}
+          >
+            <span aria-hidden className="text-ink-muted">
+              {CONFIGURACOES.icone}
+            </span>
+            Configurações
+          </Link>
           <Conta />
           <Instalar />
         </div>
       </aside>
 
-      <div className="min-w-0 pb-24 lg:pb-0">
+      <div className="min-w-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">
         {/* Sem depender de `decidiu`: a base é a de demonstração desde o
             primeiro byte de HTML, e é aí que a faixa precisa estar. Amarrá-la
             à decisão criaria um salto de layout logo depois da hidratação. */}
@@ -180,14 +357,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      {/* Barra inferior no mobile */}
-      <nav
-        aria-label="Seções do Oblix"
-        className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around gap-1 border-t border-hairline bg-plane/85 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden"
-      >
-        <Itens compacto />
-        <ContaCompacta />
-      </nav>
+      <BarraInferior aoAbrirMais={() => setMais(true)} />
+      {mais && <MenuMais aoFechar={() => setMais(false)} />}
+
+      <Avisos />
+      <AvisosDaNuvem />
+      <RegistrarOffline />
 
       {boasVindas && (
         <BemVindo

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/shell/AppShell";
+import { SCRIPT_TEMA } from "@/lib/tema";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -14,9 +15,11 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Oblix",
-    // Preta translúcida: no iPhone a barra de status fica sobre o conteúdo, e
-    // o Oblix é dark-only — qualquer outra opção abriria uma faixa clara no
-    // topo de um app que não tem tema claro.
+    // Translúcida: no iPhone instalado, o conteúdo ocupa a tela inteira e a
+    // faixa da barra de status é pintada pelo próprio app (ver `.tarja-topo`
+    // em AppShell). Os glifos do iOS aqui são sempre brancos, e é por isso que
+    // a faixa é escura NOS DOIS temas — no claro ela lê como moldura do
+    // aparelho, e não como um retângulo perdido.
     statusBarStyle: "black-translucent",
   },
   icons: {
@@ -29,19 +32,27 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Valor inicial; `SCRIPT_TEMA` o corrige antes da primeira pintura e
+  // `definirTema` o atualiza a cada troca.
   themeColor: "#08090a",
-  colorScheme: "dark",
-  // `viewport-fit: cover` faz o app usar a tela inteira quando instalado; o
-  // `env(safe-area-inset-*)` da barra inferior já cuida do entalhe.
+  // `viewport-fit: cover` faz o app usar a tela inteira quando instalado; os
+  // `env(safe-area-inset-*)` cuidam do entalhe e da barra de gestos.
   viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // `suppressHydrationWarning` porque `data-tema` é escrito pelo script antes
+    // do React montar: o HTML do servidor não tem como saber o tema de quem
+    // abriu, e sem isto o React acusaria a diferença que nós mesmos causamos.
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+      </head>
       <body className="min-h-full">
         <AppShell>{children}</AppShell>
       </body>

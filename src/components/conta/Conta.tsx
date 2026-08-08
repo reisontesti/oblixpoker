@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Marca } from "@/components/shell/Marca";
+import { Botao } from "@/components/ui/Botao";
 import { CampoTexto } from "@/components/ui/Campo";
+import { Folha } from "@/components/ui/Folha";
+import { anunciar } from "@/components/ui/Aviso";
 import {
   cadastrar,
   contarLocaisPendentes,
@@ -31,20 +34,10 @@ import { useRegistros } from "@/lib/painel";
  * e só então cria conta. Subir tudo sozinho seria decidir por ela o que fazer
  * com dados que talvez fossem só teste.
  */
-/**
- * O acesso à conta na barra inferior do celular.
- *
- * A barra lateral — onde o controle de conta morava — é `hidden lg:flex`, então
- * no telefone ele simplesmente não existia. Como o Oblix é usado no celular
- * dentro do clube, isso deixava a conta inalcançável justamente no aparelho
- * principal. Aqui ele vira o sétimo destino, com o mesmo ponto de estado da
- * versão de mesa: cor da sincronização de relance, sem texto extra.
- */
-export function ContaCompacta() {
-  const { usuario, comNuvem, sincronizando, pendentes, online } = useRegistros();
-  const [aberto, setAberto] = useState(false);
 
-  if (!comNuvem) return null;
+/** O texto do estado da sincronização, num lugar só — três telas o mostram. */
+export function useEstadoDaConta() {
+  const { usuario, comNuvem, sincronizando, pendentes, online } = useRegistros();
 
   const cor = !usuario
     ? "var(--color-ink-faint)"
@@ -54,84 +47,56 @@ export function ContaCompacta() {
         ? "var(--color-atencao)"
         : "var(--color-positivo)";
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        aria-label={usuario ? `Conta de ${usuario.email}` : "Entrar na minha conta"}
-        className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-ink-secondary transition-colors duration-200 hover:bg-white/4 hover:text-ink"
-      >
-        <span aria-hidden className="relative grid size-[18px] place-items-center">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="8" r="3.4" />
-            <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" strokeLinecap="round" />
-          </svg>
-          <span
-            aria-hidden
-            className="absolute -top-0.5 -right-0.5 size-[7px] rounded-full ring-2 ring-[var(--color-plane)]"
-            style={{ background: cor }}
-          />
-        </span>
-        <span className="text-[9.5px] font-medium">Conta</span>
-      </button>
+  const resumo = !usuario
+    ? "Sem conta neste aparelho"
+    : !online
+      ? "Sem conexão"
+      : sincronizando
+        ? "Sincronizando…"
+        : pendentes > 0
+          ? `${pendentes} ${pendentes === 1 ? "alteração" : "alterações"} para subir`
+          : "Sincronizado";
 
-      {aberto && <PainelConta aoFechar={() => setAberto(false)} />}
-    </>
-  );
+  return { usuario, comNuvem, cor, resumo, sincronizando, pendentes, online };
 }
 
+/**
+ * O acesso à conta na barra lateral e no menu "Mais".
+ *
+ * A folha em si é aberta aqui mesmo: é uma sobreposição de página inteira, e
+ * empilhar uma folha dentro da outra deixaria duas alças na tela.
+ */
 export function Conta() {
-  const { usuario, comNuvem, sincronizando, pendentes, online } = useRegistros();
+  const { usuario, comNuvem, cor, resumo } = useEstadoDaConta();
   const [aberto, setAberto] = useState(false);
 
   if (!comNuvem) return null;
 
   return (
     <>
-      {usuario ? (
-        <button
-          type="button"
-          onClick={() => setAberto(true)}
-          className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-200 hover:bg-white/4"
-        >
-          <span
-            aria-hidden
-            className="size-1.5 shrink-0 rounded-full"
-            style={{
-              background: !online
-                ? "var(--color-negativo)"
-                : sincronizando || pendentes > 0
-                  ? "var(--color-atencao)"
-                  : "var(--color-positivo)",
-            }}
-          />
-          <span className="min-w-0 flex-1">
-            {/* Dizer a verdade sobre a rede é o que evita a pior versão do
-                problema: alguém achar que perdeu um registro quando ele só
-                não subiu ainda. Nada é perdido — está gravado no aparelho e
-                sobe sozinho quando o sinal volta. */}
-            <span className="block truncate text-[11.5px] text-ink-secondary">
-              {!online
-                ? "Sem conexão"
-                : sincronizando
-                  ? "Sincronizando…"
-                  : pendentes > 0
-                    ? `${pendentes} ${pendentes === 1 ? "alteração" : "alterações"} para subir`
-                    : "Sincronizado"}
-            </span>
-            <span className="block truncate text-[10.5px] text-ink-faint">{usuario.email}</span>
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className="mt-1 flex min-h-[var(--toque)] w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 text-left transition-colors duration-200 hover:bg-realce"
+      >
+        <span
+          aria-hidden
+          className="size-1.5 shrink-0 rounded-full"
+          style={{ background: cor }}
+        />
+        <span className="min-w-0 flex-1">
+          {/* Dizer a verdade sobre a rede é o que evita a pior versão do
+              problema: alguém achar que perdeu um registro quando ele só
+              não subiu ainda. Nada é perdido — está gravado no aparelho e
+              sobe sozinho quando o sinal volta. */}
+          <span className="block truncate text-[12.5px] text-ink-secondary">
+            {usuario ? resumo : "Entrar na minha conta"}
           </span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAberto(true)}
-          className="mt-2 w-full cursor-pointer rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium text-ink-secondary transition-colors duration-200 hover:border-hairline-strong hover:text-ink"
-        >
-          Entrar na minha conta
-        </button>
-      )}
+          {usuario && (
+            <span className="block truncate text-[12px] text-ink-faint">{usuario.email}</span>
+          )}
+        </span>
+      </button>
 
       {aberto && <PainelConta aoFechar={() => setAberto(false)} />}
     </>
@@ -141,42 +106,15 @@ export function Conta() {
 export function PainelConta({ aoFechar }: { aoFechar: () => void }) {
   const { usuario } = useRegistros();
 
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => e.key === "Escape" && aoFechar();
-    window.addEventListener("keydown", aoTeclar);
-    const anterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", aoTeclar);
-      document.body.style.overflow = anterior;
-    };
-  }, [aoFechar]);
-
   return (
-    <div
-      role="dialog"
-      aria-modal
-      aria-labelledby="conta-titulo"
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-plane/80 px-4 py-10 backdrop-blur-xl"
+    <Folha
+      titulo={usuario ? "Sua conta" : "Entrar no Oblix"}
+      tituloOculto
+      largura="estreita"
+      aoFechar={aoFechar}
     >
-      <div className="placa grao surgir relative w-full max-w-[26rem] px-6 py-8 sm:px-8">
-        <div aria-hidden className="grao-camada rounded-[20px]" />
-        <button
-          type="button"
-          onClick={aoFechar}
-          aria-label="Fechar"
-          className="absolute top-4 right-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-200 hover:bg-white/6 hover:text-ink"
-        >
-          <span aria-hidden className="text-[15px] leading-none">
-            ×
-          </span>
-        </button>
-
-        <div className="relative">
-          {usuario ? <Conectado aoFechar={aoFechar} /> : <FormularioAcesso />}
-        </div>
-      </div>
-    </div>
+      {usuario ? <Conectado aoFechar={aoFechar} /> : <FormularioAcesso />}
+    </Folha>
   );
 }
 
@@ -208,20 +146,16 @@ export function FormularioAcesso() {
     const r = modo === "entrar" ? await entrar(email, senha) : await cadastrar(email, senha);
     setEnviando(false);
     if (r.erro) return setErro(r.erro);
-    if (r.confirmar) setConfirmar(true);
+    if (r.confirmar) return setConfirmar(true);
+    anunciar(modo === "entrar" ? "Você entrou na sua conta." : "Conta criada.");
   }
 
   if (confirmar) {
     return (
       <>
         <Marca tamanho={30} />
-        <h2
-          id="conta-titulo"
-          className="mt-5 text-[22px] leading-tight font-semibold tracking-[-0.02em] text-ink"
-        >
-          Confirme o seu e-mail
-        </h2>
-        <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-secondary">
+        <h2 className="texto-titulo mt-5 text-ink">Confirme o seu e-mail</h2>
+        <p className="texto-apoio mt-2.5 text-ink-secondary">
           Mandamos um link para <strong className="font-medium text-ink">{email}</strong>. Abra
           ele e volte aqui para entrar. Enquanto isso, o que você registrou continua neste
           navegador — nada se perde.
@@ -233,31 +167,33 @@ export function FormularioAcesso() {
   return (
     <>
       <Marca tamanho={30} />
-      <h2
-        id="conta-titulo"
-        className="mt-5 text-[22px] leading-tight font-semibold tracking-[-0.02em] text-ink"
-      >
+      <h2 className="texto-titulo mt-5 text-ink">
         {modo === "entrar" ? "Entrar na sua conta" : "Criar a sua conta"}
       </h2>
-      <p className="mt-2.5 text-[13px] leading-relaxed text-ink-secondary">
+      <p className="texto-apoio mt-2.5 text-ink-secondary">
         Com conta, os seus registros deixam de morar só neste navegador e passam a existir em
         qualquer aparelho onde você entrar.
       </p>
 
       <div className="mt-6 flex flex-col gap-4">
-        <CampoTexto rotulo="E-mail" valor={email} aoMudar={setEmail} placeholder="voce@email.com" />
-        <label className="flex flex-col">
-          <span className="text-[12.5px] font-medium text-ink-secondary">Senha</span>
-          <span className="mt-0.5 text-[11.5px] text-ink-muted">Ao menos 6 caracteres</span>
-          <input
-            type="password"
-            value={senha}
-            autoComplete={modo === "entrar" ? "current-password" : "new-password"}
-            onChange={(e) => setSenha(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && void enviar()}
-            className="mt-2 w-full rounded-xl border border-hairline bg-sunken px-3.5 py-2.5 text-[14px] text-ink transition-colors duration-200 hover:border-hairline-strong focus:border-[var(--color-positivo)] focus:outline-none"
-          />
-        </label>
+        <CampoTexto
+          rotulo="E-mail"
+          tipo="email"
+          modoEntrada="email"
+          autoCompletar="email"
+          valor={email}
+          aoMudar={setEmail}
+          placeholder="voce@email.com"
+        />
+        <CampoTexto
+          rotulo="Senha"
+          dica="Ao menos 6 caracteres"
+          tipo="password"
+          autoCompletar={modo === "entrar" ? "current-password" : "new-password"}
+          valor={senha}
+          aoMudar={setSenha}
+          aoConfirmar={() => void enviar()}
+        />
       </div>
 
       {erro && (
@@ -267,31 +203,34 @@ export function FormularioAcesso() {
       )}
 
       {pendentes > 0 && (
-        <p className="mt-4 rounded-xl border border-hairline bg-sunken px-3.5 py-3 text-[12px] leading-relaxed text-ink-secondary">
+        <p className="mt-4 rounded-xl border border-hairline bg-sunken px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-secondary">
           Você tem <strong className="font-medium text-ink">{pendentes} registros</strong> neste
           navegador. Depois de entrar, o Oblix pergunta se quer subir para a conta.
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={() => void enviar()}
-        disabled={enviando}
-        className="mt-6 w-full cursor-pointer rounded-xl bg-[var(--color-positivo)] px-5 py-3 text-[14px] font-semibold text-plane transition-transform duration-200 hover:brightness-110 active:scale-[0.985] disabled:opacity-50"
+      <Botao
+        tom="primario"
+        largo
+        tamanho="grande"
+        className="mt-6"
+        carregando={enviando}
+        aoClicar={() => void enviar()}
       >
         {enviando ? "Um instante…" : modo === "entrar" ? "Entrar" : "Criar conta"}
-      </button>
+      </Botao>
 
-      <button
-        type="button"
-        onClick={() => {
+      <Botao
+        tom="discreto"
+        largo
+        className="mt-2"
+        aoClicar={() => {
           setModo(modo === "entrar" ? "cadastrar" : "entrar");
           setErro(null);
         }}
-        className="mt-4 w-full cursor-pointer text-[12.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
       >
         {modo === "entrar" ? "Ainda não tenho conta" : "Já tenho conta"}
-      </button>
+      </Botao>
     </>
   );
 }
@@ -312,19 +251,15 @@ function Conectado({ aoFechar }: { aoFechar: () => void }) {
       return;
     }
     setEstado("feito");
+    anunciar(`${aMigrar} registros agora estão na sua conta.`);
   }
 
   return (
     <>
       <Marca tamanho={30} />
-      <h2
-        id="conta-titulo"
-        className="mt-5 text-[22px] leading-tight font-semibold tracking-[-0.02em] text-ink"
-      >
-        Sua conta
-      </h2>
-      <p className="mt-2.5 text-[13.5px] text-ink-secondary">{usuario?.email}</p>
-      <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+      <h2 className="texto-titulo mt-5 text-ink">Sua conta</h2>
+      <p className="texto-apoio mt-2.5 text-ink-secondary">{usuario?.email}</p>
+      <p className="mt-1 text-[12.5px] leading-relaxed text-ink-muted">
         {sincronizando
           ? "Buscando os seus registros…"
           : !online
@@ -336,26 +271,26 @@ function Conectado({ aoFechar }: { aoFechar: () => void }) {
 
       {aMigrar > 0 && estado !== "feito" && (
         <div className="mt-6 rounded-xl border border-hairline bg-sunken p-4">
-          <p className="text-[13px] font-medium text-ink">
+          <p className="text-[13.5px] font-medium text-ink">
             {aMigrar} registros ainda só neste navegador
           </p>
-          <p className="mt-1.5 text-[12px] leading-relaxed text-ink-secondary">
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
             São de antes de você ter conta. Subir junta tudo num lugar só; não subir deixa eles
             aqui, e eles continuam funcionando quando você sair da conta.
           </p>
           {erro && (
-            <p role="alert" className="mt-2 text-[12px]" style={{ color: "var(--color-negativo)" }}>
+            <p role="alert" className="mt-2 text-[12.5px]" style={{ color: "var(--color-negativo)" }}>
               {erro}
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => void subir()}
-            disabled={estado === "subindo"}
-            className="mt-3 w-full cursor-pointer rounded-xl border border-hairline bg-raised px-4 py-2.5 text-[13px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong disabled:opacity-50"
+          <Botao
+            largo
+            className="mt-3"
+            carregando={estado === "subindo"}
+            aoClicar={() => void subir()}
           >
             {estado === "subindo" ? "Subindo…" : "Subir para a conta"}
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -368,16 +303,17 @@ function Conectado({ aoFechar }: { aoFechar: () => void }) {
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={async () => {
+      <Botao
+        largo
+        className="mt-6"
+        aoClicar={async () => {
           await sair();
+          anunciar("Você saiu da conta.", "neutro");
           aoFechar();
         }}
-        className="mt-6 w-full cursor-pointer rounded-xl border border-hairline px-4 py-2.5 text-[13px] font-medium text-ink-secondary transition-colors duration-200 hover:border-hairline-strong hover:text-ink"
       >
         Sair da conta
-      </button>
+      </Botao>
     </>
   );
 }

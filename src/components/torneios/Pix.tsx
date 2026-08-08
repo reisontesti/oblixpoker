@@ -79,10 +79,10 @@ export function Pix({ valor }: { valor: number }) {
             {copiado ? "Código copiado ✓" : "Copiar código Pix"}
           </button>
 
-          <p className="mt-3 text-[11px] tracking-wide text-ink-muted uppercase">
+          <p className="mt-3 text-[12px] tracking-wide text-ink-muted uppercase">
             Ou copie manualmente
           </p>
-          <code className="mt-1.5 block max-h-24 overflow-y-auto rounded-lg border border-hairline bg-plane px-3 py-2 font-mono text-[10.5px] leading-relaxed break-all text-ink-secondary select-all">
+          <code className="mt-1.5 block max-h-24 overflow-y-auto rounded-lg border border-hairline bg-plane px-3 py-2 font-mono text-[12px] leading-relaxed break-all text-ink-secondary select-all">
             {codigo}
           </code>
         </div>
@@ -97,12 +97,12 @@ export function Pix({ valor }: { valor: number }) {
               height={132}
               className="rounded-xl"
             />
-            <p className="mt-1.5 text-center text-[10.5px] text-ink-muted">Ou escaneie</p>
+            <p className="mt-1.5 text-center text-[12px] text-ink-muted">Ou escaneie</p>
           </div>
         )}
       </div>
 
-      <p className="mt-5 border-t border-hairline pt-3.5 text-[11.5px] leading-relaxed text-ink-muted">
+      <p className="mt-5 border-t border-hairline pt-3.5 text-[12px] leading-relaxed text-ink-muted">
         Nada é cobrado automaticamente e nada fica bloqueado se você não apoiar. O
         Oblix é gratuito e continua gratuito.
       </p>

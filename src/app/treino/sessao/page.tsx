@@ -161,13 +161,16 @@ function Conteudo() {
           {sequencia >= 3 && (
             <span style={{ color: "var(--color-positivo)" }}>{sequencia} seguidas</span>
           )}
-          <Link href="/treino" className="transition-colors duration-200 hover:text-ink">
+          <Link
+            href="/treino"
+            className="-my-2 flex min-h-[var(--toque)] items-center rounded-lg px-2.5 transition-colors duration-200 hover:bg-realce hover:text-ink"
+          >
             Sair
           </Link>
         </div>
       </header>
 
-      <div className="surgir mt-3 h-[3px] overflow-hidden rounded-full bg-white/7">
+      <div className="surgir mt-3 h-[3px] overflow-hidden rounded-full bg-trilho">
         <div
           className="h-full rounded-full bg-[var(--color-positivo)] transition-[width] duration-500"
           style={{ width: `${(indice / total) * 100}%` }}
@@ -250,7 +253,7 @@ function MesaDaDecisao({ cenario }: { cenario: Cenario }) {
                 lista completa parece contradição. São os que AINDA VÃO AGIR —
                 os únicos cujos stacks mudam a decisão, porque são eles que
                 podem reaumentar. */}
-            <p className="mt-4 text-[10px] font-semibold tracking-[0.16em] text-ink-faint uppercase">
+            <p className="mt-4 text-[12px] font-semibold tracking-[0.16em] text-ink-faint uppercase">
               {cenario.situacao === "vs_shove" ? "Na mão" : "Ainda vão agir"}
             </p>
             <ul className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1.5">
@@ -325,7 +328,7 @@ function Feedback({
               <span className="w-14 shrink-0 text-[12.5px] text-ink-secondary">
                 {ROTULO_ACAO[a.acao]}
               </span>
-              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/7">
+              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-trilho">
                 <span
                   className="block h-full rounded-full"
                   style={{
@@ -338,7 +341,7 @@ function Feedback({
                 {Math.round(a.frequencia * 100)}%
               </span>
               {a.tamanhoBB && (
-                <span className="w-14 shrink-0 text-[11.5px] text-ink-muted">{a.tamanhoBB} BB</span>
+                <span className="w-14 shrink-0 text-[12px] text-ink-muted">{a.tamanhoBB} BB</span>
               )}
             </li>
           ))}
@@ -359,7 +362,7 @@ function Feedback({
           type="button"
           onClick={aoContinuar}
           autoFocus
-          className="mt-5 w-full cursor-pointer rounded-xl bg-raised px-5 py-3 text-[14px] font-semibold text-ink ring-1 ring-white/8 transition-colors duration-200 hover:bg-white/8"
+          className="mt-5 w-full cursor-pointer rounded-xl bg-raised px-5 py-3 text-[14px] font-semibold text-ink ring-1 ring-hairline-strong transition-colors duration-200 hover:bg-white/8"
         >
           Próxima decisão
         </button>

@@ -107,7 +107,7 @@ export default function Fechar() {
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-7 sm:py-10">
       <header className="surgir flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-[24px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[28px]">
+          <h1 className="truncate texto-display text-ink">
             Como terminou?
           </h1>
           <p className="mt-1 text-[13px] text-ink-secondary">
@@ -184,7 +184,7 @@ export default function Fechar() {
             <legend className="text-[12.5px] font-medium text-ink-secondary">
               Nota de disciplina
             </legend>
-            <p className="mt-0.5 text-[11.5px] text-ink-muted">
+            <p className="mt-0.5 text-[12px] text-ink-muted">
               Quanto você jogou pelo plano, e não pelo impulso. É a autoavaliação que o painel
               cruza com o resultado.
             </p>
@@ -197,7 +197,7 @@ export default function Fechar() {
                 value={nota}
                 onChange={(e) => setNota(Number(e.target.value))}
                 aria-label="Nota de disciplina de 0 a 10"
-                className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/12 accent-[var(--color-positivo)]"
+                className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-trilho accent-[var(--color-positivo)]"
               />
               <span className="numeros-tabulares w-12 text-right text-[17px] font-semibold text-ink">
                 {nota.toFixed(1).replace(".", ",")}

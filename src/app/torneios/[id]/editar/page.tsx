@@ -10,6 +10,7 @@ import { atualizarTorneio, ehRegistroProprio } from "@/lib/data/repositorio";
 import { moeda } from "@/lib/format";
 import { useClubes, useRegistros } from "@/lib/painel";
 import type { NivelEnergia } from "@/lib/types";
+import { anunciar } from "@/components/ui/Aviso";
 
 /**
  * Corrigir um torneio já registrado.
@@ -169,6 +170,7 @@ export default function EditarTorneio() {
           }
         : null,
     );
+    anunciar("Torneio atualizado.");
     router.push("/torneios");
   }
 
@@ -180,7 +182,7 @@ export default function EditarTorneio() {
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-7 sm:py-10">
       <header className="surgir flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[28px]">
+          <h1 className="texto-display text-ink">
             Corrigir torneio
           </h1>
           <p className="mt-1 truncate text-[13px] text-ink-secondary">{torneio.nome}</p>
@@ -360,7 +362,7 @@ export default function EditarTorneio() {
                 value={form.notaDisciplina}
                 onChange={(e) => definir("notaDisciplina", Number(e.target.value))}
                 aria-label="Nota de disciplina de 0 a 10"
-                className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/12 accent-[var(--color-positivo)]"
+                className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-trilho accent-[var(--color-positivo)]"
               />
               <span className="numeros-tabulares w-12 text-right text-[17px] font-semibold text-ink">
                 {form.notaDisciplina.toFixed(1).replace(".", ",")}

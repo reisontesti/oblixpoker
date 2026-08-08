@@ -43,7 +43,7 @@ export function CardSatelites({ stats, recomendacao, atraso = 0 }: Props) {
         descricao="Vale a pena jogar o satélite?"
         acessorio={
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium"
             style={{ color: v.cor, background: "color-mix(in oklab, currentColor 13%, transparent)" }}
           >
             <span aria-hidden className="text-[9px]">
@@ -61,7 +61,7 @@ export function CardSatelites({ stats, recomendacao, atraso = 0 }: Props) {
             <dd className="numeros-tabulares mt-1.5 text-[24px] font-semibold text-ink">
               {percentual(stats.taxaClassificacao)}
             </dd>
-            <dd className="text-[11.5px] text-ink-muted">
+            <dd className="text-[12px] text-ink-muted">
               {stats.classificados} de {stats.disputados} satélites
             </dd>
           </div>
@@ -70,7 +70,7 @@ export function CardSatelites({ stats, recomendacao, atraso = 0 }: Props) {
             <dd className="numeros-tabulares mt-1.5 text-[24px] font-semibold text-ink">
               {moeda(stats.custoMedioPorVaga)}
             </dd>
-            <dd className="text-[11.5px] text-ink-muted">contra o buy-in de balcão</dd>
+            <dd className="text-[12px] text-ink-muted">contra o buy-in de balcão</dd>
           </div>
           <div>
             <dt className="rotulo">Economia líquida</dt>
@@ -83,14 +83,14 @@ export function CardSatelites({ stats, recomendacao, atraso = 0 }: Props) {
             >
               {moeda(stats.economiaLiquida)}
             </dd>
-            <dd className="text-[11.5px] text-ink-muted">já descontando os que perdeu</dd>
+            <dd className="text-[12px] text-ink-muted">já descontando os que perdeu</dd>
           </div>
           <div>
             <dt className="rotulo">Melhor sequência</dt>
             <dd className="numeros-tabulares mt-1.5 text-[19px] font-medium text-ink">
               {stats.melhorSequencia} seguidos
             </dd>
-            <dd className="text-[11.5px] text-ink-muted">vagas consecutivas</dd>
+            <dd className="text-[12px] text-ink-muted">vagas consecutivas</dd>
           </div>
         </dl>
 
@@ -113,7 +113,7 @@ export function CardSatelites({ stats, recomendacao, atraso = 0 }: Props) {
               </li>
             ))}
           </ol>
-          <p className="mt-2.5 flex items-center gap-4 text-[11px] text-ink-muted">
+          <p className="mt-2.5 flex items-center gap-4 text-[12px] text-ink-muted">
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
@@ -140,7 +140,7 @@ export function CardSatelites({ stats, recomendacao, atraso = 0 }: Props) {
             <span className="block truncate text-[13px] font-medium text-ink">
               {recomendacao.titulo}
             </span>
-            <span className="block text-[11.5px] text-ink-muted">Ver a análise completa</span>
+            <span className="block text-[12px] text-ink-muted">Ver a análise completa</span>
           </span>
           <span aria-hidden className="shrink-0 text-ink-muted">
             →

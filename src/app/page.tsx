@@ -67,15 +67,14 @@ export default function Painel() {
   const base = BASE_PERIODO[periodo];
 
   return (
-    <main className="mx-auto w-full max-w-[86rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
+    <main className="mx-auto w-full max-w-[86rem] px-4 py-7 sm:px-7 sm:py-10 lg:px-10">
       {/* Uma linha de filtro acima de tudo o que ela recorta — nunca um
-          seletor por cartão, que faria os gráficos discordarem entre si. */}
-      {/* `relative z-40` porque os cartões abaixo animam com `transform`, e
-          transform cria contexto de empilhamento: sem isso eles pintam por
-          cima do pop-up de datas, que fica visível mas não clicável. */}
-      <header className="surgir relative z-40 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-        <div>
-          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
+          seletor por cartão, que faria os gráficos discordarem entre si.
+          No celular ela vai para a linha de baixo: lado a lado, a régua de
+          cinco períodos espremia o cumprimento até uma palavra por linha. */}
+      <header className="surgir flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-8 sm:gap-y-5">
+        <div className="min-w-0">
+          <h1 className="texto-display text-ink">
             {primeiraVez
               ? `Tudo pronto, ${dados.perfil.nome.split(" ")[0]}`
               : `Bom dia, ${dados.perfil.nome.split(" ")[0]}`}
@@ -83,7 +82,7 @@ export default function Painel() {
           {/* Um painel zerado não deve se apresentar como resumo de nada:
               "0 torneios · 0 satélites · 0 horas" é uma frase que só descreve
               a própria ausência. */}
-          <p className="mt-1.5 text-[13.5px] text-ink-secondary">
+          <p className="texto-apoio mt-1.5 text-ink-secondary">
             {primeiraVez ? (
               <>
                 O painel abre vazio e preenche sozinho.{" "}
@@ -116,7 +115,7 @@ export default function Painel() {
         />
       </header>
 
-      <div className="mt-7 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-12">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-12">
         <div className="min-w-0 lg:col-span-12">
           <HeroBanca dados={dados} periodo={periodo} />
         </div>

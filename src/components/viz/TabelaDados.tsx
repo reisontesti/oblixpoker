@@ -41,7 +41,7 @@ export function TabelaDados<T>({
         onClick={() => setAberta((a) => !a)}
         aria-expanded={aberta}
         aria-controls={id}
-        className="cursor-pointer text-[12px] font-medium text-ink-muted transition-colors duration-200 hover:text-ink-secondary"
+        className="-mx-2 inline-flex min-h-[var(--toque)] cursor-pointer items-center rounded-lg px-2 text-[12px] font-medium text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink-secondary"
       >
         {aberta ? "Ocultar tabela" : "Ver como tabela"}
       </button>
@@ -49,7 +49,7 @@ export function TabelaDados<T>({
       {aberta && (
         <div
           id={id}
-          className="mt-3 overflow-auto rounded-xl border border-hairline"
+          className="relative mt-3 overflow-auto rounded-xl border border-hairline"
           style={{ maxHeight: alturaMax }}
         >
           <table className="w-full border-collapse text-[12.5px]">
@@ -71,7 +71,7 @@ export function TabelaDados<T>({
             </thead>
             <tbody>
               {linhas.map((linha) => (
-                <tr key={chaveDe(linha)} className="even:bg-white/[0.015]">
+                <tr key={chaveDe(linha)} className="even:bg-realce-tenue">
                   {colunas.map((c) => (
                     <td
                       key={c.chave}

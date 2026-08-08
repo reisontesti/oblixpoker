@@ -7,9 +7,28 @@
  * "vale a pena jogar o satélite?" com os dados do próprio jogador.
  */
 
-export type Modalidade = "MTT" | "Cash" | "Sit&Go" | "Home Game";
+/**
+ * As listas vêm antes dos tipos, e os tipos saem delas.
+ *
+ * A ordem importa: com o tipo escrito à mão e a lista repetida na tela, as
+ * duas divergem no dia em que alguém acrescenta uma modalidade — e o
+ * compilador não tem como perceber. Derivando, acrescentar à lista é
+ * acrescentar ao tipo.
+ */
+export const MODALIDADES = ["MTT", "Cash", "Sit&Go", "Home Game"] as const;
 
-export type Objetivo = "Recreativo" | "Evolução" | "Competitivo" | "Profissional";
+export type Modalidade = (typeof MODALIDADES)[number];
+
+export const OBJETIVOS = ["Recreativo", "Evolução", "Competitivo", "Profissional"] as const;
+
+export type Objetivo = (typeof OBJETIVOS)[number];
+
+export const DETALHE_OBJETIVO: Record<Objetivo, string> = {
+  Recreativo: "Jogo pelo prazer",
+  Evolução: "Quero melhorar",
+  Competitivo: "Jogo para ganhar",
+  Profissional: "É a minha renda",
+};
 
 export type ViaEntrada = "direto" | "satelite";
 
@@ -352,4 +371,18 @@ export interface Perfil {
   buyInPadrao: number;
   bankrollInicial: string;
   desde: string;
+  /**
+   * A foto, como `data:` URI já reduzida a 256px no cliente.
+   *
+   * Guardada junto do perfil, e não num bucket de arquivos, porque é o que
+   * mantém a foto viva nos dois modos do Oblix: quem nunca criou conta tem
+   * perfil só no `localStorage`, e um caminho de storage ali seria um link
+   * para lugar nenhum. O corte em 256px é o que impede a coluna de virar
+   * despejo — uma foto de câmera de celular tem 4 MB, e este limite a deixa
+   * abaixo de 60 kB.
+   *
+   * `null` é o estado normal: a foto é opcional e o avatar com a inicial não é
+   * um substituto envergonhado, é o padrão.
+   */
+  foto: string | null;
 }

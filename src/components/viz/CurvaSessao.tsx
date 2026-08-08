@@ -5,7 +5,7 @@ import type { PontoSessao } from "@/lib/calc/sessao";
 import { ZONA_CRITICA_BB } from "@/lib/calc/sessao";
 import { duracao } from "@/lib/format";
 import { caminhoArea, caminhoLinha, dominioComFolga, escalaLinear, ticksBonitos } from "@/lib/viz/escala";
-import { CORES, MARCA } from "@/lib/viz/palette";
+import { MARCA, TINTA } from "@/lib/viz/palette";
 import { useLargura } from "@/lib/viz/useLargura";
 
 const MARGEM = { topo: 16, direita: 16, base: 26, esquerda: 44 };
@@ -41,7 +41,7 @@ export function CurvaSessao({ pontos }: { pontos: PontoSessao[] }) {
           valorDe={(p) => p.bb!}
           rotulo="Stack, em big blinds"
           formatarY={(v) => String(Math.round(v))}
-          cor={CORES.positivo}
+          cor={TINTA.positivo}
           // A faixa abaixo de 15 BBs é onde o torneio deixa de ter jogo
           // pós-flop e vira all-in ou fold. Marcá-la explica de um golpe por
           // que uma queda ali pesa mais que a mesma queda lá em cima.
@@ -55,7 +55,7 @@ export function CurvaSessao({ pontos }: { pontos: PontoSessao[] }) {
           valorDe={(p) => p.campoEliminado! * 100}
           rotulo="Campo já eliminado"
           formatarY={(v) => `${Math.round(v)}%`}
-          cor={CORES.direto}
+          cor={TINTA.direto}
         />
       )}
     </div>
@@ -122,10 +122,10 @@ function Painel({ largura, pontos, valorDe, rotulo, formatarY, cor, faixaCritica
               x2={MARGEM.esquerda + larguraPlot}
               y1={py}
               y2={py}
-              stroke={CORES.grade}
+              stroke={TINTA.grade}
               strokeWidth={1}
             />
-            <text x={MARGEM.esquerda - 8} y={py + 3.5} textAnchor="end" fontSize={10} fill={CORES.tintaFraca}>
+            <text x={MARGEM.esquerda - 8} y={py + 3.5} textAnchor="end" fontSize={10} fill={TINTA.tintaFraca}>
               {formatarY(v)}
             </text>
           </g>
@@ -137,7 +137,7 @@ function Painel({ largura, pontos, valorDe, rotulo, formatarY, cor, faixaCritica
             x2={MARGEM.esquerda + larguraPlot}
             y1={yDe(faixaCritica)}
             y2={yDe(faixaCritica)}
-            stroke={CORES.atencao}
+            stroke={TINTA.atencao}
             strokeWidth={1}
             strokeDasharray="3 3"
             opacity={0.7}
@@ -161,7 +161,7 @@ function Painel({ largura, pontos, valorDe, rotulo, formatarY, cor, faixaCritica
             cy={m.y}
             r={MARCA.raioMarcador - 1}
             fill={cor}
-            stroke={CORES.superficie}
+            stroke={TINTA.superficie}
             strokeWidth={1.5}
           />
         ))}
@@ -174,7 +174,7 @@ function Painel({ largura, pontos, valorDe, rotulo, formatarY, cor, faixaCritica
               y={ALTURA - 8}
               textAnchor={i === 0 ? "start" : i === ticksX.length - 1 ? "end" : "middle"}
               fontSize={10}
-              fill={CORES.tintaFraca}
+              fill={TINTA.tintaFraca}
             >
               {duracao(Math.round(m))}
             </text>
@@ -182,7 +182,7 @@ function Painel({ largura, pontos, valorDe, rotulo, formatarY, cor, faixaCritica
         )}
       </svg>
       {faixaCritica !== undefined && (
-        <p className="mt-1 text-[10.5px] text-ink-muted">
+        <p className="mt-1 text-[12px] text-ink-muted">
           A linha tracejada marca {faixaCritica} blinds — abaixo dela o jogo vira all-in ou fold.
         </p>
       )}

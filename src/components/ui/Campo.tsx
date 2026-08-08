@@ -6,6 +6,12 @@ interface BaseProps {
   rotulo: string;
   dica?: string;
   erro?: string;
+  /**
+   * Campo em leitura. Existe para o perfil da demonstração: os valores são do
+   * Rafael Antunes, que não existe, e um campo que aceita digitação mas
+   * descarta o que foi digitado é pior do que um campo travado.
+   */
+  desabilitado?: boolean;
   children?: ReactNode;
 }
 
@@ -23,12 +29,12 @@ function Envolucro({
   return (
     <label htmlFor={id} className="flex h-full flex-col">
       <span className="block text-[12.5px] font-medium text-ink-secondary">{rotulo}</span>
-      {dica && <span className="mt-0.5 block text-[11.5px] text-ink-muted">{dica}</span>}
+      {dica && <span className="mt-0.5 block text-[12px] text-ink-muted">{dica}</span>}
       <span className="mt-auto block pt-2">{children}</span>
       {erro && (
         <span
           role="alert"
-          className="mt-1.5 flex items-center gap-1.5 text-[11.5px]"
+          className="mt-1.5 flex items-center gap-1.5 text-[12px]"
           style={{ color: "var(--color-negativo)" }}
         >
           <span aria-hidden>!</span>
@@ -39,16 +45,32 @@ function Envolucro({
   );
 }
 
+/**
+ * `text-[16px]` no celular não é escolha de estilo — é o que impede o iOS de
+ * dar zoom sozinho ao focar o campo. Abaixo de 16px o Safari aproxima a tela,
+ * e sair desse zoom depois é manobra manual no meio de um formulário. Do `sm`
+ * para cima volta aos 14px do resto do produto, onde o mouse não tem o
+ * problema.
+ *
+ * `min-h-[var(--toque)]` pelo mesmo motivo dos botões: campo é alvo de toque.
+ */
 const CLASSE_ENTRADA =
-  "w-full rounded-xl border border-hairline bg-sunken px-3.5 py-2.5 text-[14px] text-ink " +
+  "w-full min-h-[var(--toque)] rounded-xl border border-hairline bg-sunken px-3.5 py-2.5 " +
+  "text-[16px] sm:text-[14px] text-ink " +
   "placeholder:text-ink-faint transition-colors duration-200 " +
-  "hover:border-hairline-strong focus:border-[var(--color-positivo)] focus:outline-none";
+  "hover:border-hairline-strong focus:border-[var(--color-positivo)] focus:outline-none " +
+  "aria-[invalid=true]:border-[var(--color-negativo)] " +
+  "disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:border-hairline";
 
 interface TextoProps extends BaseProps {
   valor: string;
   aoMudar: (v: string) => void;
-  tipo?: "text" | "date";
+  tipo?: "text" | "date" | "email" | "password" | "search";
   placeholder?: string;
+  /** Qual teclado o celular abre. Sem isto, e-mail vem com teclado de texto. */
+  modoEntrada?: "text" | "email" | "numeric" | "tel" | "search";
+  autoCompletar?: string;
+  aoConfirmar?: () => void;
   /**
    * Valores já conhecidos, oferecidos como autocompletar sem impedir os
    * outros. É o que um `select` não consegue: a lista de clubes de um jogador
@@ -64,6 +86,9 @@ export function CampoTexto({
   tipo = "text",
   placeholder,
   sugestoes,
+  modoEntrada,
+  autoCompletar,
+  aoConfirmar,
   ...base
 }: TextoProps) {
   const id = useId();
@@ -77,8 +102,12 @@ export function CampoTexto({
         type={tipo}
         value={valor}
         placeholder={placeholder}
+        inputMode={modoEntrada}
+        autoComplete={autoCompletar}
         list={lista ? idLista : undefined}
         onChange={(e) => aoMudar(e.target.value)}
+        onKeyDown={aoConfirmar ? (e) => e.key === "Enter" && aoConfirmar() : undefined}
+        disabled={base.desabilitado}
         aria-invalid={base.erro ? true : undefined}
         className={CLASSE_ENTRADA}
       />
@@ -141,6 +170,7 @@ export function CampoNumero({
           step={passo}
           placeholder={placeholder}
           onChange={(e) => aoMudar(e.target.value === "" ? null : Number(e.target.value))}
+          disabled={base.desabilitado}
           aria-invalid={base.erro ? true : undefined}
           className={`${CLASSE_ENTRADA} numeros-tabulares ${prefixo ? "pl-11" : ""} ${
             sufixo ? "pr-12" : ""
@@ -169,6 +199,7 @@ export function CampoSelecao({ valor, aoMudar, opcoes, ...base }: SelecaoProps) 
       <select
         id={id}
         value={valor}
+        disabled={base.desabilitado}
         onChange={(e) => aoMudar(e.target.value)}
         className={`${CLASSE_ENTRADA} cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" fill="none"><path d="M1 1.5 6 6.5l5-5" stroke="%236b7573" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')] bg-[right_0.9rem_center] bg-no-repeat pr-10`}
       >
@@ -238,7 +269,7 @@ export function CampoEscolha<T extends string>({
   return (
     <fieldset>
       <legend className="text-[12.5px] font-medium text-ink-secondary">{rotulo}</legend>
-      {dica && <p className="mt-0.5 text-[11.5px] text-ink-muted">{dica}</p>}
+      {dica && <p className="mt-0.5 text-[12px] text-ink-muted">{dica}</p>}
       {/* Colunas vêm por style, e não por classe: `grid-cols-${n}` montado em
           tempo de execução não é enxergado pelo Tailwind e nunca chegaria ao
           CSS gerado. */}
@@ -259,7 +290,7 @@ export function CampoEscolha<T extends string>({
               role="radio"
               aria-checked={ativo}
               onClick={() => aoMudar(o.valor)}
-              className={`cursor-pointer rounded-xl border px-3.5 py-2.5 text-left transition-all duration-200 ${
+              className={`min-h-[var(--toque)] cursor-pointer rounded-xl border px-3.5 py-2.5 text-left transition-all duration-200 ${
                 ativo
                   ? "border-transparent bg-raised text-ink ring-1 ring-[var(--color-positivo)]"
                   : "border-hairline bg-sunken text-ink-secondary hover:border-hairline-strong hover:text-ink"
@@ -268,7 +299,7 @@ export function CampoEscolha<T extends string>({
             >
               <span className="block text-[13.5px] font-medium">{o.rotulo}</span>
               {o.detalhe && (
-                <span className="mt-0.5 block text-[11.5px] text-ink-muted">{o.detalhe}</span>
+                <span className="mt-0.5 block text-[12px] text-ink-muted">{o.detalhe}</span>
               )}
             </button>
           );

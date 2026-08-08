@@ -130,7 +130,7 @@ export function CurvaBankroll({ serie }: Props) {
               y={y(t)}
               textAnchor="end"
               dominantBaseline="middle"
-              className="numeros-tabulares fill-[var(--color-ink-muted)] text-[11px]"
+              className="numeros-tabulares fill-[var(--color-ink-muted)] text-[12px]"
             >
               {moedaCompacta(t)}
             </text>
@@ -143,7 +143,7 @@ export function CurvaBankroll({ serie }: Props) {
             x={t.px}
             y={ALTURA - 8}
             textAnchor="middle"
-            className="fill-[var(--color-ink-muted)] text-[11px]"
+            className="fill-[var(--color-ink-muted)] text-[12px]"
           >
             {t.rotulo}
           </text>
@@ -223,18 +223,18 @@ export function CurvaBankroll({ serie }: Props) {
             top: Math.max(0, ativo.y - 96),
           }}
         >
-          <p className="text-[11px] text-ink-muted">
+          <p className="text-[12px] text-ink-muted">
             {dataMedia(new Date(ativo.dado.t).toISOString())}
           </p>
           <p className="mt-1 truncate text-[13px] font-medium text-ink">{ativo.dado.rotulo}</p>
           <div className="mt-2.5 flex items-baseline justify-between gap-3 border-t border-hairline pt-2.5">
-            <span className="text-[11px] text-ink-muted">Banca</span>
+            <span className="text-[12px] text-ink-muted">Banca</span>
             <span className="numeros-tabulares text-[14px] font-semibold text-ink">
               {moeda(ativo.dado.saldo)}
             </span>
           </div>
           <div className="mt-1 flex items-baseline justify-between gap-3">
-            <span className="text-[11px] text-ink-muted">Resultado</span>
+            <span className="text-[12px] text-ink-muted">Resultado</span>
             <span
               className="numeros-tabulares text-[13px] font-medium"
               style={{

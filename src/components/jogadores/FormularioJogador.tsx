@@ -11,6 +11,7 @@ import { novoIdJogador, salvarJogador } from "@/lib/data/repositorio";
 import { PERFIS } from "@/lib/jogadores";
 import { useClubes } from "@/lib/painel";
 import { ROTULO_PERFIL, type Jogador, type PerfilJogador } from "@/lib/types";
+import { anunciar } from "@/components/ui/Aviso";
 
 /** Uma linha por item: editar lista em campo de texto é mais rápido do que
  *  gerenciar botões de adicionar e remover, e é assim que se anota de verdade. */
@@ -61,6 +62,7 @@ export function FormularioJogador({ jogador, aoConcluir, aoCancelar }: Props) {
       atualizadoEm: new Date().toISOString(),
       notas: jogador?.notas ?? [],
     });
+    anunciar(jogador ? "Leitura atualizada." : `${nome.trim()} entrou no banco.`);
     aoConcluir();
   }
 

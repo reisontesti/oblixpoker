@@ -43,7 +43,7 @@ export function CartaoMesa({ jogador }: { jogador: Jogador }) {
             <h3 className="text-[16px] leading-tight font-semibold text-ink">{jogador.nome}</h3>
             <SeloPerfil perfil={jogador.perfil} />
           </div>
-          <p className="mt-1.5 text-[11.5px] text-ink-muted">
+          <p className="mt-1.5 text-[12px] text-ink-muted">
             {jogador.clube} · {jogador.confrontos} confrontos ·{" "}
             <span
               style={{
@@ -91,7 +91,7 @@ export function CartaoMesa({ jogador }: { jogador: Jogador }) {
 
         {idade.aviso && (
           <p
-            className="mt-4 flex items-start gap-2 rounded-lg border border-hairline px-3 py-2 text-[11.5px] leading-snug"
+            className="mt-4 flex items-start gap-2 rounded-lg border border-hairline px-3 py-2 text-[12px] leading-snug"
             style={{ color: "var(--color-atencao)" }}
           >
             <span aria-hidden>!</span>
@@ -133,7 +133,7 @@ export function CartaoMesa({ jogador }: { jogador: Jogador }) {
                 <ul className="mt-2 space-y-2.5">
                   {jogador.notas.map((n) => (
                     <li key={n.id} className="border-l border-hairline pl-3">
-                      <p className="text-[10.5px] tracking-wide text-ink-muted">
+                      <p className="text-[12px] tracking-wide text-ink-muted">
                         {ROTULO_NOTA[n.tipo]} · {haQuantoTempo(n.data, hoje)}
                       </p>
                       <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-secondary">

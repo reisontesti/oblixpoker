@@ -42,7 +42,7 @@ export default function Treino() {
   return (
     <main className="mx-auto w-full max-w-[76rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
       <header className="surgir">
-        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
+        <h1 className="texto-display text-ink">
           Treino
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-ink-secondary">
@@ -57,12 +57,12 @@ export default function Treino() {
         <div aria-hidden className="grao-camada rounded-[20px]" />
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-40 left-1/3 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(25,158,112,0.16),transparent)] blur-2xl"
+          className="pointer-events-none absolute -top-40 left-1/3 h-72 w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--color-positivo)_16%,transparent),transparent)] blur-2xl"
         />
         <div className="relative flex flex-wrap items-end justify-between gap-x-8 gap-y-5 px-6 py-7 sm:px-8">
           <div className="min-w-0 max-w-xl">
             <p className="rotulo">Seu próximo treino</p>
-            <h2 className="mt-2.5 text-[24px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[28px]">
+            <h2 className="texto-display mt-2.5 text-ink">
               {ROTULO_FASE[recomendado.fase]}
             </h2>
             <p className="mt-2 text-[13.5px] leading-relaxed text-ink-secondary">
@@ -79,7 +79,7 @@ export default function Treino() {
       </section>
 
       {/* ── categorias ── */}
-      <h2 className="surgir mt-8 text-[11px] font-semibold tracking-[0.16em] text-ink-muted uppercase">
+      <h2 className="surgir mt-8 text-[12px] font-semibold tracking-[0.16em] text-ink-muted uppercase">
         Escolher a fase
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,7 +121,7 @@ function Cartao({
             </p>
           </div>
           <span
-            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium"
             style={{ color: e.cor, background: "color-mix(in oklab, currentColor 13%, transparent)" }}
           >
             <span aria-hidden className="text-[9px]">
@@ -141,11 +141,11 @@ function Cartao({
           <>
             <div className="mt-4 flex items-baseline gap-2.5">
               <span className="numeros-tabulares text-[26px] font-semibold text-ink">{pct}%</span>
-              <span className="text-[11.5px] text-ink-muted">
+              <span className="text-[12px] text-ink-muted">
                 em {desempenho.decisoes} decisões
               </span>
             </div>
-            <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-white/7">
+            <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-trilho">
               <div
                 className="h-full rounded-full transition-[width] duration-[1.2s] ease-[var(--ease-out-quint)]"
                 style={{ width: `${pct}%`, background: e.cor }}

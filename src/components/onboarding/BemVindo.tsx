@@ -7,7 +7,14 @@ import { comecarDoZero, usarDemonstracao } from "@/lib/data/repositorio";
 import { FormularioAcesso } from "@/components/conta/Conta";
 import { supabaseConfigurado } from "@/lib/supabase/cliente";
 import { moeda } from "@/lib/format";
-import type { Modalidade, Objetivo, Perfil } from "@/lib/types";
+import {
+  DETALHE_OBJETIVO,
+  MODALIDADES,
+  OBJETIVOS,
+  type Modalidade,
+  type Objetivo,
+  type Perfil,
+} from "@/lib/types";
 
 /**
  * As boas-vindas — a única tela do Oblix que aparece antes de qualquer dado.
@@ -26,19 +33,13 @@ import type { Modalidade, Objetivo, Perfil } from "@/lib/types";
  * onde estava.
  */
 
-const OBJETIVOS: { valor: Objetivo; rotulo: string; detalhe: string }[] = [
-  { valor: "Recreativo", rotulo: "Recreativo", detalhe: "Jogo pelo prazer" },
-  { valor: "Evolução", rotulo: "Evolução", detalhe: "Quero melhorar" },
-  { valor: "Competitivo", rotulo: "Competitivo", detalhe: "Jogo para ganhar" },
-  { valor: "Profissional", rotulo: "Profissional", detalhe: "É a minha renda" },
-];
+const OPCOES_OBJETIVO = OBJETIVOS.map((o) => ({
+  valor: o,
+  rotulo: o,
+  detalhe: DETALHE_OBJETIVO[o],
+}));
 
-const MODALIDADES: { valor: Modalidade; rotulo: string }[] = [
-  { valor: "MTT", rotulo: "MTT" },
-  { valor: "Cash", rotulo: "Cash" },
-  { valor: "Sit&Go", rotulo: "Sit&Go" },
-  { valor: "Home Game", rotulo: "Home Game" },
-];
+const OPCOES_MODALIDADE = MODALIDADES.map((m) => ({ valor: m, rotulo: m }));
 
 export type Etapa = "escolha" | "perfil" | "entrar";
 
@@ -102,6 +103,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
       buyInPadrao: buyIn,
       bankrollInicial: moeda(bancaInicial),
       desde: new Date().toISOString(),
+      foto: null,
     };
 
     comecarDoZero(perfil, bancaInicial);
@@ -120,7 +122,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
           aria-hidden
           className="pointer-events-none absolute -inset-px overflow-hidden rounded-[20px]"
         >
-          <div className="absolute -top-40 left-1/2 h-80 w-[36rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(25,158,112,0.18),transparent)] blur-2xl" />
+          <div className="absolute -top-40 left-1/2 h-80 w-[36rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--color-positivo)_18%,transparent),transparent)] blur-2xl" />
         </div>
 
         {aoFechar && (
@@ -128,7 +130,7 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
             type="button"
             onClick={aoFechar}
             aria-label="Fechar"
-            className="absolute top-4 right-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-200 hover:bg-white/6 hover:text-ink"
+            className="absolute top-4 right-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
           >
             <span aria-hidden className="text-[15px] leading-none">
               ×
@@ -234,14 +236,14 @@ export function BemVindo({ etapaInicial = "escolha", aoFechar }: Props) {
                   rotulo="O que o poker é para você"
                   valor={objetivo}
                   aoMudar={setObjetivo}
-                  opcoes={OBJETIVOS}
+                  opcoes={OPCOES_OBJETIVO}
                 />
 
                 <CampoEscolha
                   rotulo="Modalidade principal"
                   valor={modalidade}
                   aoMudar={setModalidade}
-                  opcoes={MODALIDADES}
+                  opcoes={OPCOES_MODALIDADE}
                 />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

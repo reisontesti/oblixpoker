@@ -1,8 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { FormularioJogador } from "@/components/jogadores/FormularioJogador";
+import { anunciar } from "@/components/ui/Aviso";
+import { Botao } from "@/components/ui/Botao";
+import { useConfirmacao } from "@/components/ui/Confirmar";
+import { Vazio } from "@/components/ui/Vazio";
 import { NotaRapida } from "@/components/jogadores/NotaRapida";
 import { SeloPerfil } from "@/components/jogadores/SeloPerfil";
 import { Segmentado } from "@/components/ui/Segmentado";
@@ -18,10 +21,12 @@ function Linha({
   jogador,
   naMesa,
   aoEditar,
+  aoRemover,
 }: {
   jogador: Jogador;
   naMesa: boolean;
   aoEditar: () => void;
+  aoRemover: () => void;
 }) {
   const { hoje } = useRegistros();
   const [aberto, setAberto] = useState(false);
@@ -37,12 +42,12 @@ function Linha({
             <h3 className="text-[14.5px] font-medium text-ink">{jogador.nome}</h3>
             <SeloPerfil perfil={jogador.perfil} />
             {idade.estado === "vencida" && (
-              <span className="text-[10.5px]" style={{ color: "var(--color-atencao)" }}>
+              <span className="text-[12px]" style={{ color: "var(--color-atencao)" }}>
                 ! leitura antiga
               </span>
             )}
           </div>
-          <p className="mt-1 text-[11.5px] text-ink-muted">
+          <p className="mt-1 text-[12px] text-ink-muted">
             {jogador.clube} · {jogador.confrontos} confrontos ·{" "}
             <span
               style={{
@@ -66,12 +71,12 @@ function Linha({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 max-sm:w-full">
           <button
             type="button"
             onClick={() => alternarNaMesa(jogador.id)}
             aria-pressed={naMesa}
-            className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors duration-200 ${
+            className={`min-h-[var(--toque)] flex-1 cursor-pointer rounded-xl border px-3.5 text-[13px] font-medium transition-colors duration-200 sm:flex-none ${
               naMesa
                 ? "border-transparent bg-raised text-ink ring-1 ring-[var(--color-positivo)]"
                 : "border-hairline text-ink-secondary hover:border-hairline-strong hover:text-ink"
@@ -83,7 +88,7 @@ function Linha({
             type="button"
             onClick={() => setAberto((a) => !a)}
             aria-expanded={aberto}
-            className="cursor-pointer text-[12.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
+            className="min-h-[var(--toque)] cursor-pointer rounded-xl px-3.5 text-[13px] text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
           >
             {aberto ? "Menos" : "Detalhes"}
           </button>
@@ -123,7 +128,7 @@ function Linha({
               <ul className="mt-2 space-y-2.5">
                 {jogador.notas.map((n) => (
                   <li key={n.id} className="border-l border-hairline pl-3">
-                    <p className="text-[10.5px] tracking-wide text-ink-muted">
+                    <p className="text-[12px] tracking-wide text-ink-muted">
                       {ROTULO_NOTA[n.tipo]} · {haQuantoTempo(n.data, hoje)}
                     </p>
                     <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-secondary">
@@ -138,29 +143,19 @@ function Linha({
           {anotando ? (
             <NotaRapida idJogador={jogador.id} aoSalvar={() => setAnotando(false)} />
           ) : (
-            <div className="flex flex-wrap items-center gap-4 border-t border-hairline pt-3">
-              <button
-                type="button"
-                onClick={() => setAnotando(true)}
-                className="cursor-pointer text-[12.5px] font-medium text-[var(--color-positivo)] transition-opacity duration-200 hover:opacity-80"
-              >
-                Anotar
-              </button>
-              <button
-                type="button"
-                onClick={aoEditar}
-                className="cursor-pointer text-[12.5px] text-ink-secondary transition-colors duration-200 hover:text-ink"
-              >
+            <div className="flex flex-wrap items-center gap-1 border-t border-hairline pt-2">
+              <Botao tom="discreto" aoClicar={() => setAnotando(true)}>
+                <span style={{ color: "var(--color-positivo)" }}>Anotar</span>
+              </Botao>
+              <Botao tom="discreto" aoClicar={aoEditar}>
                 Editar leitura
-              </button>
+              </Botao>
               {ehRegistroProprio(jogador.id) && (
-                <button
-                  type="button"
-                  onClick={() => removerJogador(jogador.id)}
-                  className="ml-auto cursor-pointer text-[12.5px] text-ink-faint transition-colors duration-200 hover:text-[var(--color-negativo)]"
-                >
-                  Remover
-                </button>
+                <div className="ml-auto">
+                  <Botao tom="discreto" aoClicar={aoRemover}>
+                    Remover
+                  </Botao>
+                </div>
               )}
             </div>
           )}
@@ -175,6 +170,7 @@ export default function Jogadores() {
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("nome");
   const [editando, setEditando] = useState<Jogador | "novo" | null>(null);
+  const { dialogo, confirmar } = useConfirmacao();
 
   const lista = registros.jogadores
     .filter((j) => {
@@ -196,30 +192,25 @@ export default function Jogadores() {
     <main className="mx-auto w-full max-w-[76rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
       <header className="surgir flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
         <div>
-          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
-            Banco de jogadores
-          </h1>
-          <p className="mt-1.5 text-[13.5px] text-ink-secondary">
+          <h1 className="texto-display text-ink">Banco de jogadores</h1>
+          <p className="texto-apoio mt-1.5 text-ink-secondary">
             {registros.jogadores.length} adversários mapeados
             {desatualizados > 0 && ` · ${desatualizados} com leitura vencida`}
             {registros.mesaAtual.length > 0 && ` · ${registros.mesaAtual.length} na mesa agora`}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/mesa"
-            className="rounded-xl border border-hairline px-4 py-2.5 text-[13.5px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-white/4"
-          >
+        <div className="flex items-center gap-2 max-sm:w-full">
+          <Botao href="/mesa" className="max-sm:flex-1">
             Modo Mesa
-          </Link>
-          <button
-            type="button"
-            onClick={() => setEditando("novo")}
-            className="cursor-pointer rounded-xl bg-[var(--color-positivo)] px-5 py-2.5 text-[13.5px] font-semibold text-plane transition-opacity duration-200 hover:opacity-90"
+          </Botao>
+          <Botao
+            tom="primario"
+            className="max-sm:flex-1"
+            aoClicar={() => setEditando("novo")}
           >
             Novo adversário
-          </button>
+          </Botao>
         </div>
       </header>
 
@@ -233,14 +224,14 @@ export default function Jogadores() {
         </div>
       )}
 
-      <div className="surgir mt-6 flex flex-wrap items-center gap-3">
+      <div className="surgir mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="search"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por nome, clube ou perfil"
           aria-label="Buscar adversário"
-          className="min-w-0 flex-1 rounded-xl border border-hairline bg-sunken px-3.5 py-2.5 text-[13.5px] text-ink placeholder:text-ink-faint focus:border-[var(--color-positivo)] focus:outline-none"
+          className="min-h-[var(--toque)] w-full min-w-0 rounded-xl border border-hairline bg-sunken px-3.5 text-[16px] text-ink placeholder:text-ink-faint focus:border-[var(--color-positivo)] focus:outline-none sm:w-auto sm:flex-1 sm:text-[14px]"
         />
         <Segmentado
           rotuloAcessivel="Ordenar adversários"
@@ -264,16 +255,44 @@ export default function Jogadores() {
                 jogador={j}
                 naMesa={registros.mesaAtual.includes(j.id)}
                 aoEditar={() => setEditando(j)}
+                aoRemover={() =>
+                  confirmar({
+                    titulo: `Remover ${j.nome}?`,
+                    corpo:
+                      "A leitura inteira sai do banco — perfil, explorações, tells e todas as notas de campo. Não há como desfazer.",
+                    rotuloAcao: "Remover adversário",
+                    aoConfirmar: () => {
+                      removerJogador(j.id);
+                      anunciar(`${j.nome} saiu do banco.`, "neutro");
+                    },
+                  })
+                }
               />
             ))}
           </ul>
           {lista.length === 0 && (
-            <p className="relative px-6 py-12 text-center text-[13.5px] text-ink-muted">
-              Nenhum adversário encontrado.
-            </p>
+            <div className="relative">
+              <Vazio
+                titulo={
+                  busca
+                    ? "Nenhum adversário com esse nome"
+                    : "Seu banco de adversários está vazio"
+                }
+                corpo={
+                  busca
+                    ? "Tente outro nome, outro clube ou outro perfil de jogo."
+                    : "Uma leitura anotada vale mais que uma lembrada. O Modo Mesa depois mostra, de relance, quem está sentado com você."
+                }
+                acao={
+                  busca ? undefined : { rotulo: "Anotar o primeiro", aoClicar: () => setEditando("novo") }
+                }
+              />
+            </div>
           )}
         </div>
       </div>
+
+      {dialogo}
     </main>
   );
 }

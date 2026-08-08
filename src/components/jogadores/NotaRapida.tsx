@@ -4,6 +4,7 @@ import { useState } from "react";
 import { adicionarNota } from "@/lib/data/repositorio";
 import { ROTULO_NOTA } from "@/lib/jogadores";
 import type { TipoNota } from "@/lib/types";
+import { anunciar } from "@/components/ui/Aviso";
 
 const TIPOS: TipoNota[] = ["leitura", "tell", "exploracao", "geral"];
 
@@ -27,6 +28,7 @@ export function NotaRapida({
   function salvar() {
     if (!texto.trim()) return;
     adicionarNota(idJogador, tipo, texto);
+    anunciar("Nota registrada.");
     setTexto("");
     aoSalvar?.();
   }
@@ -40,7 +42,7 @@ export function NotaRapida({
             type="button"
             onClick={() => setTipo(t)}
             aria-pressed={t === tipo}
-            className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors duration-200 ${
+            className={`cursor-pointer rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors duration-200 ${
               t === tipo
                 ? "bg-raised text-ink ring-1 ring-[var(--color-positivo)]"
                 : "text-ink-muted hover:text-ink-secondary"
@@ -69,7 +71,7 @@ export function NotaRapida({
       />
 
       <div className="mt-2 flex items-center justify-between gap-3">
-        <span className="text-[10.5px] text-ink-faint">Enter salva · Shift+Enter quebra linha</span>
+        <span className="text-[12px] text-ink-faint">Enter salva · Shift+Enter quebra linha</span>
         <button
           type="button"
           onClick={salvar}

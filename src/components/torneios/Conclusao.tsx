@@ -94,7 +94,7 @@ function PedidoDeApoio({ premiacao }: { premiacao: number }) {
               >
                 {Math.round(fatia * 100)}%
               </span>
-              <span className="numeros-tabulares mt-0.5 block text-[11.5px] text-ink-muted">
+              <span className="numeros-tabulares mt-0.5 block text-[12px] text-ink-muted">
                 {moeda(premiacao * fatia)}
               </span>
             </button>
@@ -169,9 +169,11 @@ export function Conclusao({ torneio, investimento, aoRegistrarOutro }: Props) {
           <div
             className="absolute -top-44 left-1/2 h-80 w-[34rem] -translate-x-1/2 rounded-full blur-3xl"
             style={{
+              // Pelo token, e não por rgba fixo: no tema claro um halo branco
+              // sobre branco não existe, e o verde precisa ser o verde escuro.
               background: premiado
-                ? "radial-gradient(closest-side, rgba(25,158,112,0.22), transparent)"
-                : "radial-gradient(closest-side, rgba(255,255,255,0.06), transparent)",
+                ? "radial-gradient(closest-side, color-mix(in oklab, var(--color-positivo) 22%, transparent), transparent)"
+                : "radial-gradient(closest-side, var(--color-realce-forte), transparent)",
             }}
           />
         </div>
@@ -180,9 +182,17 @@ export function Conclusao({ torneio, investimento, aoRegistrarOutro }: Props) {
         <div className="relative px-6 py-8 text-center sm:px-9 sm:py-10">
           <p className="rotulo">{premiado ? "Torneio registrado" : "Registrado"}</p>
 
-          {/* Conquista não recebe matiz própria — recebe luz. */}
+          {/* Conquista não recebe matiz própria — recebe destaque. O halo
+              branco só funcionava no escuro; sobre o claro ele sumia, e a
+              única marca de um título vencido desaparecia com o tema. */}
           {titulo && (
-            <p className="mt-4 text-[12px] font-semibold tracking-[0.22em] text-ink drop-shadow-[0_0_14px_rgba(242,244,243,0.5)]">
+            <p
+              className="mt-4 inline-block rounded-full px-3 py-1 text-[12px] font-semibold tracking-[0.22em]"
+              style={{
+                color: "var(--color-atencao)",
+                background: "color-mix(in oklab, var(--color-atencao) 14%, transparent)",
+              }}
+            >
               TÍTULO
             </p>
           )}
@@ -251,7 +261,7 @@ export function Conclusao({ torneio, investimento, aoRegistrarOutro }: Props) {
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
         <Link
           href="/"
-          className="rounded-xl border border-hairline px-5 py-2.5 text-center text-[13.5px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-white/4"
+          className="rounded-xl border border-hairline px-5 py-2.5 text-center text-[13.5px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-realce"
         >
           Ver no painel
         </Link>

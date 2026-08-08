@@ -16,6 +16,7 @@ import { fecharSessao } from "@/lib/data/repositorio";
 import { dataMedia, decimal, diaLocal, haQuantoTempo, moeda, percentual } from "@/lib/format";
 import { useRegistros } from "@/lib/painel";
 import type { DiarioMental } from "@/lib/types";
+import { anunciar } from "@/components/ui/Aviso";
 
 const soData = (iso: string) => diaLocal(new Date(iso));
 
@@ -33,7 +34,7 @@ function BarraContraste({ contraste }: { contraste: Contraste }) {
     <div className="space-y-[3px]">
       {lados.map((lado) => (
         <div key={lado.rotulo} className="flex items-center gap-2.5">
-          <span className="w-32 shrink-0 text-[11.5px] text-ink-muted">{lado.rotulo}</span>
+          <span className="w-32 shrink-0 text-[12px] text-ink-muted">{lado.rotulo}</span>
           <span className="relative h-[13px] flex-1">
             <span
               className="absolute inset-y-0 left-0 rounded-r-[3px] transition-[width] duration-[900ms] ease-[var(--ease-out-quint)]"
@@ -47,7 +48,7 @@ function BarraContraste({ contraste }: { contraste: Contraste }) {
           <span className="numeros-tabulares w-11 shrink-0 text-right text-[12.5px] font-medium text-ink">
             {percentual(lado.faixa.profundidadeMedia * 100)}
           </span>
-          <span className="numeros-tabulares w-8 shrink-0 text-right text-[11px] text-ink-faint">
+          <span className="numeros-tabulares w-8 shrink-0 text-right text-[12px] text-ink-faint">
             {lado.faixa.torneios}
           </span>
         </div>
@@ -90,11 +91,14 @@ function Fechamento({ registro }: { registro: DiarioMental }) {
       <button
         type="button"
         onClick={() =>
-          fecharSessao(registro.id, {
-            houveTilt: tilt === "sim",
-            comoTerminei: comoTerminei.trim(),
-            aprendizado: aprendizado.trim(),
-          })
+          {
+            fecharSessao(registro.id, {
+              houveTilt: tilt === "sim",
+              comoTerminei: comoTerminei.trim(),
+              aprendizado: aprendizado.trim(),
+            });
+            anunciar("Sessão fechada no diário.");
+          }
         }
         className="cursor-pointer rounded-xl bg-[var(--color-positivo)] px-5 py-2.5 text-[13.5px] font-semibold text-plane transition-opacity duration-200 hover:opacity-90"
       >
@@ -129,7 +133,7 @@ export default function Diario() {
   return (
     <main className="mx-auto w-full max-w-[76rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
       <header className="surgir">
-        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
+        <h1 className="texto-display text-ink">
           Diário mental
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-ink-secondary">
@@ -250,7 +254,7 @@ export default function Diario() {
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                     <p className="text-[12.5px] font-medium text-ink-secondary">{c.pergunta}</p>
                     {c.momento === "depois" && (
-                      <span className="text-[10.5px] text-ink-faint">respondido depois</span>
+                      <span className="text-[12px] text-ink-faint">respondido depois</span>
                     )}
                   </div>
                   <div className="mt-2.5">
@@ -273,7 +277,7 @@ export default function Diario() {
                 </div>
               )}
 
-              <p className="border-t border-hairline pt-3.5 text-[11.5px] leading-relaxed text-ink-muted">
+              <p className="border-t border-hairline pt-3.5 text-[12px] leading-relaxed text-ink-muted">
                 Profundidade usa todos os torneios, e não só os premiados, então
                 move devagar e resiste a um prêmio grande isolado. Perguntas
                 respondidas depois do jogo aparecem marcadas: elas descrevem a
@@ -305,12 +309,12 @@ export default function Diario() {
                     >
                       <div>
                         <p className="text-[12.5px] text-ink-secondary">{dataMedia(d.data)}</p>
-                        <p className="text-[11px] text-ink-faint">
+                        <p className="text-[12px] text-ink-faint">
                           {haQuantoTempo(d.data, registros.hoje)}
                         </p>
                       </div>
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
                           {[
                             { r: "dormiu bem", v: d.dormiuBem, bom: true },
                             { r: "calmo", v: d.calmo, bom: true },
@@ -345,7 +349,7 @@ export default function Diario() {
                           </p>
                         )}
                         {torneio && (
-                          <p className="numeros-tabulares mt-1.5 text-[11.5px] text-ink-muted">
+                          <p className="numeros-tabulares mt-1.5 text-[12px] text-ink-muted">
                             → {torneio.nome} · {torneio.colocacao}º de {torneio.jogadores} ·{" "}
                             {torneio.premiacao > 0
                               ? moeda(torneio.premiacao)

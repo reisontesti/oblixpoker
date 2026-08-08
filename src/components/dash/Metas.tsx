@@ -50,7 +50,7 @@ export function Metas({ metas, atraso = 0 }: { metas: MetaCalculada[]; atraso?: 
           <button
             type="button"
             onClick={() => setEditando((v) => !v)}
-            className="cursor-pointer rounded-lg px-2 py-1 text-[12px] font-medium text-ink-secondary transition-colors duration-200 hover:bg-white/6 hover:text-ink"
+            className="-my-2 flex min-h-[var(--toque)] cursor-pointer items-center rounded-lg px-2.5 text-[12px] font-medium text-ink-secondary transition-colors duration-200 hover:bg-realce hover:text-ink"
           >
             {editando ? "Concluir" : "Editar"}
           </button>
@@ -92,7 +92,7 @@ export function Metas({ metas, atraso = 0 }: { metas: MetaCalculada[]; atraso?: 
                     <span className="block truncate text-[13.5px] font-medium text-ink">
                       {meta.titulo}
                     </span>
-                    <span className="block truncate text-[11.5px] text-ink-muted">
+                    <span className="block truncate text-[12px] text-ink-muted">
                       {meta.detalhe}
                     </span>
                   </span>
@@ -103,14 +103,14 @@ export function Metas({ metas, atraso = 0 }: { metas: MetaCalculada[]; atraso?: 
                 </div>
 
                 <div className="mt-3 flex items-center gap-3">
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/7">
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-trilho">
                     <div
                       className="h-full rounded-full transition-[width] duration-[1.4s] ease-[var(--ease-out-quint)]"
                       style={{ width: `${meta.progresso * 100}%`, background: estado.cor }}
                     />
                   </div>
                   <span
-                    className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium"
+                    className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium"
                     style={{ color: estado.cor }}
                   >
                     <span aria-hidden className="text-[9px]">
@@ -124,7 +124,7 @@ export function Metas({ metas, atraso = 0 }: { metas: MetaCalculada[]; atraso?: 
           })}
 
           {desligadas > 0 && (
-            <li className="border-t border-hairline pt-3.5 text-[11.5px] text-ink-muted">
+            <li className="border-t border-hairline pt-3.5 text-[12px] text-ink-muted">
               {desligadas === 1 ? "1 meta desligada" : `${desligadas} metas desligadas`}.
             </li>
           )}
@@ -164,7 +164,7 @@ function LinhaEdicao({ meta }: { meta: MetaCalculada }) {
     <li className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-hairline py-3.5 first:border-t-0 first:pt-1">
       <label className="min-w-0 flex-1">
         <span className="block text-[13px] font-medium text-ink">{meta.editar.rotulo}</span>
-        <span className="block text-[11.5px] text-ink-muted">
+        <span className="block text-[12px] text-ink-muted">
           Você está em {meta.formatar(meta.atual)}
         </span>
       </label>
@@ -202,7 +202,7 @@ function LinhaEdicao({ meta }: { meta: MetaCalculada }) {
         aria-label={`${meta.ativa ? "Desligar" : "Ligar"} a meta ${meta.editar.rotulo}`}
         onClick={() => gravar(texto, !meta.ativa)}
         className={`relative h-6 w-10 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${
-          meta.ativa ? "bg-[var(--color-positivo)]" : "bg-white/12"
+          meta.ativa ? "bg-[var(--color-positivo)]" : "bg-trilho"
         }`}
       >
         <span

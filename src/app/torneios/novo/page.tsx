@@ -261,7 +261,7 @@ export default function NovoTorneio() {
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-7 sm:py-10">
       <header className="surgir flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[28px]">
+          <h1 className="texto-display text-ink">
             Registrar torneio
           </h1>
           <p className="mt-1 text-[13px] text-ink-secondary">
@@ -270,7 +270,7 @@ export default function NovoTorneio() {
         </div>
         <Link
           href="/torneios"
-          className="shrink-0 text-[13px] text-ink-muted transition-colors duration-200 hover:text-ink"
+          className="-mr-2.5 flex min-h-[var(--toque)] shrink-0 items-center rounded-lg px-2.5 text-[13px] text-ink-muted transition-colors duration-200 hover:bg-realce hover:text-ink"
         >
           Cancelar
         </Link>
@@ -292,7 +292,7 @@ export default function NovoTorneio() {
                 }}
               />
               <span
-                className={`mt-2 block text-[11px] ${atual ? "font-medium text-ink" : "text-ink-muted"}`}
+                className={`mt-2 block text-[12px] ${atual ? "font-medium text-ink" : "text-ink-muted"}`}
               >
                 {p.rotulo}
               </span>
@@ -626,7 +626,7 @@ export default function NovoTorneio() {
                     <span className="text-[12px] font-normal text-ink-faint"> / 10</span>
                   </span>
                 </div>
-                <p className="mt-0.5 text-[11.5px] text-ink-muted">
+                <p className="mt-0.5 text-[12px] text-ink-muted">
                   Quanto você jogou o seu jogo, independente do resultado.
                 </p>
                 <input

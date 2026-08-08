@@ -2,10 +2,23 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    OBLIX — sistema visual
-   Dark-only por decisão de produto (obsidiana). Cores validadas com o
-   validador de paleta: a tríade jade/blue/orange passa --pairs all no modo
-   dark sobre a superfície #0E1011 (CVD ΔE 9.4 · visão normal ΔE 20.9 · todas
-   ≥ 3:1). Ver src/lib/viz/palette.ts para o registro completo das decisões.
+   ───────────────────────────────────────────────────────────────────────────
+   Um só lugar define cor, espaço, raio, sombra e tipografia. Nenhuma página
+   inventa valor próprio: quando cada tela escolhe o seu cinza, o produto
+   parece cinco produtos.
+
+   TEMA. O escuro é o padrão e é onde o Oblix nasceu — obsidiana, validada com
+   o validador de paleta (a tríade jade/blue/orange passa --pairs all sobre
+   #0E1011; CVD ΔE 9.4 · visão normal ΔE 20.9 · todas ≥ 3:1). O claro é uma
+   paleta INTEIRA, e não o escuro clareado: sobre branco, o jade #199E70 cai
+   para 3,1:1 e o âmbar #D99A1F para 2,2:1 — reprovaria justamente os avisos.
+   Cada matiz ganhou o seu par escurecido, todos ≥ 4,5:1 sobre a superfície.
+
+   Só existe UM seletor de tema aqui: `[data-tema="claro"]`. Quem resolve
+   "sistema" é o script de `Tema.tsx`, que grava `claro` ou `escuro` no
+   `<html>` antes da primeira pintura e reage a `prefers-color-scheme` em
+   tempo real. Fazer a resolução no CSS exigiria repetir a paleta inteira
+   dentro de uma media query — duas listas que um dia divergiriam.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
@@ -27,6 +40,16 @@
   --color-grid: #1c2021;
   --color-axis: #2a2f30;
 
+  /* ── realce ──────────────────────────────────────────────────────────────
+     O que antes era `white/4`, `white/8` e `white/22` espalhados pelo código.
+     Viraram nome porque no tema claro isto precisa ser PRETO: `bg-white/4`
+     sobre branco não é sutil, é invisível. */
+  --color-realce-tenue: rgba(255, 255, 255, 0.025);
+  --color-realce: rgba(255, 255, 255, 0.05);
+  --color-realce-forte: rgba(255, 255, 255, 0.09);
+  --color-trilho: rgba(255, 255, 255, 0.08);
+  --color-marca: rgba(255, 255, 255, 0.22);
+
   /* ── estado (reservado: sempre com ícone + rótulo) ───────────────────── */
   --color-positivo: #199e70;
   --color-positivo-dim: #0f5f44;
@@ -38,7 +61,10 @@
   --color-direto: #3987e5;
   --color-satelite: #d95926;
 
-  /* ── rampa ordinal: energia (5 passos, uma matiz, ΔL ≥ 0.06) ─────────── */
+  /* ── rampa ordinal: energia (5 passos, uma matiz, ΔL ≥ 0.06) ───────────
+     No escuro, mais energia = mais claro. No claro isso se inverte: sobre
+     branco, o passo mais claro seria o menos visível, e a rampa passaria a
+     dizer o contrário do que quer dizer. */
   --color-energia-1: #146b4e;
   --color-energia-2: #178d63;
   --color-energia-3: #1cae7b;
@@ -54,13 +80,88 @@
   --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Fora do `@theme` porque não geram utilidade — são valores compostos que as
+   utilidades `placa`, `folha` e afins consomem. */
+:root {
+  --sombra-placa:
+    0 1px 0 0 rgba(255, 255, 255, 0.045) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.9);
+  --sombra-flutuante: 0 24px 64px -16px rgba(0, 0, 0, 0.75);
+  --gradiente-placa: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-raised) 55%, transparent) 0%,
+    var(--color-card) 42%
+  );
+  --veu: rgba(8, 9, 10, 0.78);
+  --opacidade-grao: 0.028;
+  --mistura-grao: overlay;
+
+  /* A régua de alvo de toque. 44px é a medida da Apple e é o que separa
+     "botão" de "chance de acertar". */
+  --toque: 44px;
+
+  color-scheme: dark;
+}
+
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  --color-plane: #f4f6f5;
+  --color-card: #ffffff;
+  --color-raised: #edf0ef;
+  --color-sunken: #f1f3f2;
+
+  --color-ink: #0d1211;
+  --color-ink-secondary: #4a5452;
+  --color-ink-muted: #68726f;
+  --color-ink-faint: #939c99;
+
+  --color-hairline: rgba(9, 17, 15, 0.09);
+  --color-hairline-strong: rgba(9, 17, 15, 0.17);
+  --color-grid: #e6e9e8;
+  --color-axis: #c9cfcd;
+
+  --color-realce-tenue: rgba(9, 17, 15, 0.022);
+  --color-realce: rgba(9, 17, 15, 0.045);
+  --color-realce-forte: rgba(9, 17, 15, 0.09);
+  --color-trilho: rgba(9, 17, 15, 0.1);
+  --color-marca: rgba(9, 17, 15, 0.3);
+
+  --color-positivo: #0c7a55;
+  --color-positivo-dim: #b7e2d1;
+  --color-negativo: #c33a34;
+  --color-negativo-dim: #f3c9c6;
+  --color-atencao: #8a6000;
+
+  --color-direto: #1a5fbe;
+  --color-satelite: #ad4318;
+
+  --color-energia-1: #bfe6d6;
+  --color-energia-2: #8ed4b8;
+  --color-energia-3: #4dbb92;
+  --color-energia-4: #17936a;
+  --color-energia-5: #0c5f44;
+
+  --sombra-placa:
+    0 1px 0 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(9, 17, 15, 0.05),
+    0 14px 30px -16px rgba(9, 17, 15, 0.18);
+  --sombra-flutuante: 0 24px 64px -16px rgba(9, 17, 15, 0.22);
+  --gradiente-placa: linear-gradient(180deg, #ffffff 0%, #fcfdfd 100%);
+  --veu: rgba(244, 246, 245, 0.82);
+  /* `overlay` sobre branco não aparece; `multiply` a 5% dá a mesma quebra do
+     chapado sem sujar a superfície. */
+  --opacidade-grao: 0.05;
+  --mistura-grao: multiply;
+}
+
 /* ═══ base ═══════════════════════════════════════════════════════════════ */
 
 html {
-  color-scheme: dark;
   background: var(--color-plane);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Só o dedo rola a página; o navegador não deve oferecer zoom por duplo
+     toque num app que já dimensiona tudo para o polegar. */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -69,6 +170,17 @@ body {
   font-family: var(--font-sans);
   font-feature-settings: "cv11", "ss01";
   overflow-x: hidden;
+}
+
+/* A transição só liga depois que o tema inicial já pintou: sem isso, a
+   primeira pintura anima do escuro para o claro à vista de todos. */
+html[data-tema-pronto] body,
+html[data-tema-pronto] .placa,
+html[data-tema-pronto] .placa-sutil {
+  transition:
+    background-color 0.28s var(--ease-out-soft),
+    border-color 0.28s var(--ease-out-soft),
+    color 0.28s var(--ease-out-soft);
 }
 
 ::selection {
@@ -85,13 +197,13 @@ body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-realce-forte);
   border-radius: 99px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--color-marca);
   background-clip: content-box;
 }
 
@@ -99,6 +211,63 @@ body {
   outline: 2px solid var(--color-positivo);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* ═══ tipografia ═════════════════════════════════════════════════════════
+   Seis níveis, e não vinte e três tamanhos avulsos. Cada um cresce um passo
+   no desktop; nenhum desce abaixo de 12px em texto de leitura, que é onde o
+   celular começa a exigir aproximar o aparelho do rosto.                    */
+
+@utility texto-display {
+  font-size: 27px;
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  @media (width >= 40rem) {
+    font-size: 32px;
+  }
+}
+
+@utility texto-titulo {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  @media (width >= 40rem) {
+    font-size: 22px;
+  }
+}
+
+@utility texto-subtitulo {
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+@utility texto-corpo {
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+@utility texto-apoio {
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+@utility texto-legenda {
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* Rótulo de seção: caixa alta, pequeno, muito espaçado. 11px e não 10 —
+   caixa alta espaçada a 10px vira textura no celular, não palavra. */
+@utility rotulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
 }
 
 /* ═══ utilitários de composição ══════════════════════════════════════════ */
@@ -111,16 +280,10 @@ body {
    "card escuro" de "vidro" — luz batendo na borda, não uma cor de fundo. */
 @utility placa {
   position: relative;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--color-raised) 55%, transparent) 0%,
-    var(--color-card) 42%
-  );
+  background: var(--gradiente-placa);
   border: 1px solid var(--color-hairline);
   border-radius: 20px;
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.045) inset,
-    0 24px 48px -24px rgba(0, 0, 0, 0.9);
+  box-shadow: var(--sombra-placa);
 }
 
 @utility placa-sutil {
@@ -129,7 +292,7 @@ body {
   border-radius: 16px;
 }
 
-/* Granulado quase imperceptível: tira o "plástico" do preto chapado. */
+/* Granulado quase imperceptível: tira o "plástico" do chapado. */
 @utility grao {
   position: relative;
 }
@@ -137,18 +300,41 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.028;
-  mix-blend-mode: overlay;
+  opacity: var(--opacidade-grao);
+  mix-blend-mode: var(--mistura-grao);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Rótulo de seção: caixa alta, pequeno, muito espaçado. */
-@utility rotulo {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
+/* Área de toque confortável sem inchar o desenho: o botão continua com a
+   altura visual que tem, e o alvo cresce por fora com um pseudoelemento. */
+@utility alvo-toque {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 0 50%;
+    width: max(100%, var(--toque));
+    height: max(100%, var(--toque));
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Faixa rolável na horizontal — filtros, abas, qualquer fila que não cabe.
+   Rola com o dedo e encaixa; nunca empurra a página. */
+@utility fila-rolavel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  & > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
 }
 
 /* ═══ animação ═══════════════════════════════════════════════════════════ */
@@ -194,8 +380,34 @@ body {
   }
 }
 
+@keyframes oblix-subir {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes oblix-esmaecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @utility surgir {
   animation: oblix-surgir 0.62s var(--ease-out-quint) both;
+}
+
+@utility subir {
+  animation: oblix-subir 0.34s var(--ease-out-quint) both;
+}
+
+@utility esmaecer {
+  animation: oblix-esmaecer 0.22s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {

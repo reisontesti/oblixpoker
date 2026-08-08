@@ -19,7 +19,7 @@ export default function PaginaSatelites() {
   return (
     <main className="mx-auto w-full max-w-[86rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
       <header className="surgir">
-        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
+        <h1 className="texto-display text-ink">
           Satélites
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-ink-secondary">

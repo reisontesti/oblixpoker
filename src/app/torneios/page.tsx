@@ -1,13 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { ListaTorneios } from "@/components/torneios/ListaTorneios";
+import { anunciar } from "@/components/ui/Aviso";
+import { Botao } from "@/components/ui/Botao";
+import { useConfirmacao } from "@/components/ui/Confirmar";
 import { CabecalhoPlaca, Placa } from "@/components/ui/Placa";
 import { Segmentado } from "@/components/ui/Segmentado";
-import { ehItm, ehMesaFinal, ehTitulo, investimento } from "@/lib/calc/metricas";
+import { Vazio } from "@/components/ui/Vazio";
+import { ehItm } from "@/lib/calc/metricas";
 import { ehRegistroProprio, remover } from "@/lib/data/repositorio";
-import { dataMedia, duracao, moeda, moedaComSinal, ordinal, percentual } from "@/lib/format";
+import { percentual } from "@/lib/format";
 import { usePainel } from "@/lib/painel";
+import type { Torneio } from "@/lib/types";
 
 type Filtro = "todos" | "premiados" | "satelite" | "meus";
 
@@ -15,6 +20,7 @@ export default function Torneios() {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const dados = usePainel("tudo");
   const { geral, idx } = dados;
+  const { dialogo, confirmar } = useConfirmacao();
 
   const lista = [...dados.torneios]
     .reverse()
@@ -28,29 +34,37 @@ export default function Torneios() {
             : true,
     );
 
+  // Apagar um torneio mexe na banca, no ROI, no ITM e nas metas do ano. Antes
+  // disso era um toque só, num alvo de 19px, ao lado de "Editar".
+  const pedirParaApagar = (t: Torneio) =>
+    confirmar({
+      titulo: `Apagar ${t.nome}?`,
+      corpo:
+        "O torneio some do histórico e sai de todos os cálculos — banca, ROI, ITM e metas. Não há como desfazer.",
+      rotuloAcao: "Apagar torneio",
+      aoConfirmar: () => {
+        remover(t.id);
+        anunciar("Torneio apagado.", "neutro");
+      },
+    });
+
   return (
-    <main className="mx-auto w-full max-w-[86rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
-      <header className="surgir flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-        <div>
-          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
-            Torneios
-          </h1>
-          <p className="mt-1.5 text-[13.5px] text-ink-secondary">
-            {geral.torneios} registros · {percentual(geral.itmPct)} de ITM ·{" "}
-            {geral.mesasFinais} mesas finais · {geral.titulos}{" "}
-            {geral.titulos === 1 ? "título" : "títulos"}
+    <main className="mx-auto w-full max-w-[86rem] px-4 py-7 sm:px-7 sm:py-10 lg:px-10">
+      <header className="surgir flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <div className="min-w-0">
+          <h1 className="texto-display text-ink">Torneios</h1>
+          <p className="texto-apoio mt-1.5 text-ink-secondary">
+            {geral.torneios} registros · {percentual(geral.itmPct)} de ITM · {geral.mesasFinais}{" "}
+            mesas finais · {geral.titulos} {geral.titulos === 1 ? "título" : "títulos"}
           </p>
         </div>
 
-        <Link
-          href="/torneios/novo"
-          className="rounded-xl bg-[var(--color-positivo)] px-5 py-2.5 text-[13.5px] font-semibold text-plane transition-opacity duration-200 hover:opacity-90"
-        >
+        <Botao href="/torneios/novo" tom="primario" className="max-sm:w-full">
           Registrar torneio
-        </Link>
+        </Botao>
       </header>
 
-      <div className="mt-7">
+      <div className="mt-6">
         <Placa>
           <CabecalhoPlaca
             titulo="Histórico"
@@ -70,164 +84,36 @@ export default function Torneios() {
             }
           />
 
-          <div className="overflow-x-auto px-3 pb-5 sm:px-4">
-            <table className="w-full min-w-[48rem] border-collapse text-[13px]">
-              <caption className="sr-only">
-                Todos os torneios registrados, com via de entrada, colocação e resultado
-              </caption>
-              <thead>
-                <tr className="text-[10px] tracking-[0.14em] text-ink-muted uppercase">
-                  <th scope="col" className="px-3 pb-2 text-left font-semibold">
-                    Data
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-left font-semibold">
-                    Torneio
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-left font-semibold">
-                    Entrada
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-right font-semibold">
-                    Investido
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-right font-semibold">
-                    Posição
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-right font-semibold">
-                    Duração
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-right font-semibold">
-                    Resultado
-                  </th>
-                  <th scope="col" className="px-3 pb-2 text-right font-semibold">
-                    <span className="sr-only">Ações</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {lista.map((t) => {
-                  const sat = t.sateliteId ? idx.get(t.sateliteId) : null;
-                  const investido = investimento(t, sat);
-                  const saldo = t.premiacao - investido;
-                  const proprio = ehRegistroProprio(t.id);
-
-                  return (
-                    <tr
-                      key={t.id}
-                      className="group border-t border-hairline transition-colors duration-200 hover:bg-white/[0.025]"
-                    >
-                      <td className="numeros-tabulares px-3 py-2.5 whitespace-nowrap text-ink-muted">
-                        {dataMedia(t.data)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="flex items-center gap-2">
-                          <span className="max-w-[15rem] truncate text-ink">{t.nome}</span>
-                          {proprio && (
-                            <span className="shrink-0 rounded-full border border-hairline px-1.5 py-px text-[9.5px] tracking-wide text-ink-muted">
-                              seu
-                            </span>
-                          )}
-                        </span>
-                        <span className="block max-w-[15rem] truncate text-[11.5px] text-ink-muted">
-                          {t.clube} · {t.jogadores} jogadores
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span
-                          className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
-                          style={{
-                            color:
-                              t.via === "satelite"
-                                ? "var(--color-satelite)"
-                                : "var(--color-direto)",
-                            background: "color-mix(in oklab, currentColor 12%, transparent)",
-                          }}
-                        >
-                          {t.via === "satelite" ? "Satélite" : "Direto"}
-                        </span>
-                      </td>
-                      <td className="numeros-tabulares px-3 py-2.5 text-right whitespace-nowrap text-ink-secondary">
-                        {moeda(investido)}
-                      </td>
-                      <td className="numeros-tabulares px-3 py-2.5 text-right whitespace-nowrap">
-                        <span
-                          className={
-                            ehTitulo(t) || ehMesaFinal(t)
-                              ? "font-semibold text-ink"
-                              : "text-ink-secondary"
-                          }
-                        >
-                          {t.colocacao !== null ? ordinal(t.colocacao) : "—"}
-                        </span>
-                        {ehTitulo(t) && (
-                          <span className="ml-1.5 text-[10px] font-semibold tracking-wide text-ink drop-shadow-[0_0_8px_rgba(242,244,243,0.55)]">
-                            TÍTULO
-                          </span>
-                        )}
-                        {!ehTitulo(t) && ehMesaFinal(t) && (
-                          <span className="ml-1.5 text-[10px] text-ink-secondary">MF</span>
-                        )}
-                      </td>
-                      <td className="numeros-tabulares px-3 py-2.5 text-right whitespace-nowrap text-ink-muted">
-                        {duracao(t.duracaoMin)}
-                      </td>
-                      <td
-                        className="numeros-tabulares px-3 py-2.5 text-right font-medium whitespace-nowrap"
-                        style={{
-                          color: saldo >= 0 ? "var(--color-positivo)" : "var(--color-negativo)",
-                        }}
-                      >
-                        {moedaComSinal(saldo)}
-                      </td>
-                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                        {/* Só o que o jogador registrou pode ser editado ou
-                            apagado — a base de demonstração é leitura.
-                            "Editar" vem antes de "Apagar" porque é o que
-                            resolve o caso comum: um dígito errado. Antes disso,
-                            corrigir custava apagar tudo e digitar de novo. */}
-                        {proprio && (
-                          <span className="flex justify-end gap-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
-                            <Link
-                              href={`/torneios/${t.id}/editar`}
-                              className="text-[11.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
-                            >
-                              Editar
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => remover(t.id)}
-                              className="cursor-pointer text-[11.5px] text-ink-faint transition-colors duration-200 hover:text-[var(--color-negativo)]"
-                            >
-                              Apagar
-                            </button>
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {lista.length === 0 && (
-              <div className="px-3 py-12 text-center">
-                <p className="text-[13.5px] text-ink-secondary">
-                  {filtro === "meus"
-                    ? "Você ainda não registrou nenhum torneio."
-                    : "Nenhum torneio neste filtro."}
-                </p>
-                {filtro === "meus" && (
-                  <Link
-                    href="/torneios/novo"
-                    className="mt-4 inline-block rounded-xl border border-hairline px-4 py-2 text-[13px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-white/4"
-                  >
-                    Registrar o primeiro
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
+          {lista.length === 0 ? (
+            <Vazio
+              titulo={
+                filtro === "meus"
+                  ? "Você ainda não registrou nenhum torneio"
+                  : "Nenhum torneio neste filtro"
+              }
+              corpo={
+                filtro === "meus"
+                  ? "Cada torneio registrado alimenta a banca, o ROI e a leitura de satélites. O primeiro leva menos de um minuto."
+                  : "Troque o filtro acima para ver o resto do histórico."
+              }
+              acao={
+                filtro === "meus"
+                  ? { rotulo: "Registrar o primeiro", href: "/torneios/novo" }
+                  : undefined
+              }
+            />
+          ) : (
+            <ListaTorneios
+              torneios={lista}
+              idx={idx}
+              aoApagar={pedirParaApagar}
+              comInvestimento
+            />
+          )}
         </Placa>
       </div>
+
+      {dialogo}
     </main>
   );
 }

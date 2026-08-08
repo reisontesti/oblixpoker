@@ -143,7 +143,7 @@ export default function Mesa() {
     <main className="mx-auto w-full max-w-[76rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
       <header className="surgir flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
+          <h1 className="texto-display text-ink">
             Modo Mesa
           </h1>
           <p className="mt-1.5 max-w-xl text-[13.5px] leading-relaxed text-ink-secondary">
@@ -158,7 +158,7 @@ export default function Mesa() {
             <button
               type="button"
               onClick={() => setSeletorAberto(!mostrarSeletor)}
-              className="cursor-pointer rounded-xl border border-hairline px-4 py-2 text-[13px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-white/4"
+              className="cursor-pointer rounded-xl border border-hairline px-4 py-2 text-[13px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-realce"
             >
               {mostrarSeletor ? "Fechar" : "Ajustar mesa"}
             </button>
@@ -193,7 +193,7 @@ export default function Mesa() {
             <section key={grupo.risco} className="surgir" style={{ animationDelay: `${gi * 70}ms` }}>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h2 className="rotulo">{grupo.titulo}</h2>
-                <p className="text-[11.5px] text-ink-muted">{grupo.nota}</p>
+                <p className="text-[12px] text-ink-muted">{grupo.nota}</p>
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {grupo.jogadores.map((j) => (

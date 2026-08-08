@@ -40,12 +40,12 @@ export function ParDeBarras({ titulo, nota, series, formatar, menorEhMelhor }: P
   return (
     <div className="py-3.5">
       <p className="text-[12px] font-medium text-ink-secondary">{titulo}</p>
-      {nota && <p className="mt-0.5 text-[11px] text-ink-muted">{nota}</p>}
+      {nota && <p className="mt-0.5 text-[12px] text-ink-muted">{nota}</p>}
 
       <div className="mt-2.5 space-y-[2px]">
         {series.map((s, i) => (
           <div key={s.rotulo} className="flex items-center gap-2.5">
-            <span className="w-16 shrink-0 text-[11.5px] text-ink-muted">{s.rotulo}</span>
+            <span className="w-16 shrink-0 text-[12px] text-ink-muted">{s.rotulo}</span>
             <span className="relative h-[13px] flex-1">
               {/* Linha do zero — só aparece quando há valor negativo em jogo */}
               {min < 0 && (

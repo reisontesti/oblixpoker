@@ -18,7 +18,7 @@ export function SeloPerfil({
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full font-medium ${
-        tamanho === "grande" ? "px-3 py-1 text-[12.5px]" : "px-2.5 py-0.5 text-[11px]"
+        tamanho === "grande" ? "px-3 py-1 text-[12.5px]" : "px-2.5 py-0.5 text-[12px]"
       }`}
       style={{ color: cor, background: "color-mix(in oklab, currentColor 13%, transparent)" }}
     >

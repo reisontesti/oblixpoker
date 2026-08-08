@@ -27,14 +27,14 @@ function Trilho({ linha }: { linha: LinhaSaude }) {
       <div className="flex items-baseline justify-between gap-3">
         <span className="flex min-w-0 items-baseline gap-2.5">
           <span className="text-[13.5px] font-medium text-ink">{linha.rotulo}</span>
-          <span className="truncate text-[11.5px] text-ink-muted">{linha.descricao}</span>
+          <span className="truncate text-[12px] text-ink-muted">{linha.descricao}</span>
         </span>
         <span className="flex shrink-0 items-baseline gap-2.5">
           <span className="numeros-tabulares text-[14px] font-semibold text-ink">
             {decimal(linha.valor, 1)}%
           </span>
           <span
-            className="inline-flex items-center gap-1 text-[11px] font-medium"
+            className="inline-flex items-center gap-1 text-[12px] font-medium"
             style={{ color: estado.cor }}
           >
             <span aria-hidden className="text-[8px]">
@@ -46,7 +46,7 @@ function Trilho({ linha }: { linha: LinhaSaude }) {
       </div>
 
       <div className="relative mt-2.5 h-6">
-        <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white/6" />
+        <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-trilho" />
         {/* Faixa alvo */}
         <div
           className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full"
@@ -58,7 +58,7 @@ function Trilho({ linha }: { linha: LinhaSaude }) {
         />
         {/* Amostra anterior, como referência apagada */}
         <div
-          className="absolute top-1/2 h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-white/22"
+          className="absolute top-1/2 h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-marca"
           style={{ left: pct(linha.anterior) }}
           aria-hidden
         />
@@ -123,7 +123,7 @@ export function SaudeTecnica({ saude, medicao, hoje, atraso = 0 }: Props) {
         descricao={`${dentro} de ${saude.length} indicadores dentro da faixa saudável para o seu estilo`}
         acessorio={
           <span
-            className="whitespace-nowrap text-[11px]"
+            className="whitespace-nowrap text-[12px]"
             style={{ color: vencida ? "var(--color-atencao)" : "var(--color-ink-muted)" }}
           >
             {vencida && (
@@ -149,7 +149,7 @@ export function SaudeTecnica({ saude, medicao, hoje, atraso = 0 }: Props) {
           ))}
         </ul>
 
-        <div className="mt-4 flex items-center gap-4 border-t border-hairline pt-3.5 text-[11px] text-ink-muted">
+        <div className="mt-4 flex items-center gap-4 border-t border-hairline pt-3.5 text-[12px] text-ink-muted">
           <span className="flex items-center gap-1.5">
             <span
               aria-hidden
@@ -159,7 +159,7 @@ export function SaudeTecnica({ saude, medicao, hoje, atraso = 0 }: Props) {
             faixa alvo
           </span>
           <span className="flex items-center gap-1.5">
-            <span aria-hidden className="h-3 w-px bg-white/22" />
+            <span aria-hidden className="h-3 w-px bg-marca" />
             trimestre anterior
           </span>
         </div>

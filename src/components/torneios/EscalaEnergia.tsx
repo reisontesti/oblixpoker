@@ -23,7 +23,7 @@ export function EscalaEnergia({ valor, aoMudar }: Props) {
       <legend className="text-[12.5px] font-medium text-ink-secondary">
         Como você chegou para jogar?
       </legend>
-      <p className="mt-0.5 text-[11.5px] text-ink-muted">
+      <p className="mt-0.5 text-[12px] text-ink-muted">
         É com isso que o Oblix descobre se jogar o satélite antes derruba sua
         performance no principal.
       </p>
@@ -56,7 +56,7 @@ export function EscalaEnergia({ valor, aoMudar }: Props) {
                 />
               </span>
               <span
-                className={`mt-2 block text-center text-[10.5px] leading-tight ${
+                className={`mt-2 block text-center text-[12px] leading-tight ${
                   ativo ? "font-medium text-ink" : "text-ink-muted"
                 }`}
               >
