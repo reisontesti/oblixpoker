@@ -4,14 +4,19 @@ import {
   DIARIO,
   HOJE,
   JOGADORES,
+  MEDICOES,
   MOVIMENTOS,
   PERFIL,
   SATELITES,
   TORNEIOS,
 } from "@/lib/data/seed";
+import { CHAVES_META } from "@/lib/types";
 import type {
+  ChaveMeta,
   DiarioMental,
   Jogador,
+  MedicaoTecnica,
+  MetaDefinida,
   MovimentoBankroll,
   NotaJogador,
   Perfil,
@@ -66,6 +71,13 @@ export interface Registros {
   /** Quem está na mesa agora. Sobrevive a fechar o app no meio do torneio. */
   mesaAtual: string[];
   diario: DiarioMental[];
+  medicoes: MedicaoTecnica[];
+  /**
+   * Alvos escolhidos pelo jogador, indexados por `ano:chave`. Ausência
+   * significa "use o padrão" — não significa meta desligada, que é um estado
+   * diferente e mora no campo `ativa`.
+   */
+  metas: Record<string, MetaDefinida>;
 }
 
 export interface Conta {
@@ -74,8 +86,10 @@ export interface Conta {
   perfil: Perfil | null;
 }
 
-export interface Estado extends Omit<Registros, "jogadores"> {
+export interface Estado extends Omit<Registros, "jogadores" | "metas"> {
   jogadores: Jogador[];
+  /** Alvos do ano corrente, já resolvidos: os do jogador ou os padrões. */
+  metas: Record<ChaveMeta, MetaDefinida | null>;
   modo: ModoBase;
   /** Quem o painel cumprimenta e de quem é o buy-in padrão. */
   perfil: Perfil;
@@ -123,6 +137,8 @@ const vazio: Registros = {
   jogadores: {},
   mesaAtual: [],
   diario: [],
+  medicoes: [],
+  metas: {},
 };
 
 const CONTA_INICIAL: Conta = { modo: "demonstracao", perfil: null };
@@ -145,6 +161,7 @@ interface Base {
   movimentos: MovimentoBankroll[];
   jogadores: Jogador[];
   diario: DiarioMental[];
+  medicoes: MedicaoTecnica[];
 }
 
 const BASE_DEMO: Base = {
@@ -153,6 +170,7 @@ const BASE_DEMO: Base = {
   movimentos: MOVIMENTOS,
   jogadores: JOGADORES,
   diario: DIARIO,
+  medicoes: MEDICOES,
 };
 
 const BASE_VAZIA: Base = {
@@ -161,6 +179,7 @@ const BASE_VAZIA: Base = {
   movimentos: [],
   jogadores: [],
   diario: [],
+  medicoes: [],
 };
 
 const baseDe = (modo: ModoBase) => (modo === "demonstracao" ? BASE_DEMO : BASE_VAZIA);
@@ -204,8 +223,30 @@ function montar(
     jogadores: fundirJogadores(base.jogadores, locais.jogadores),
     mesaAtual: locais.mesaAtual,
     diario: ordenarPorData([...base.diario, ...locais.diario]),
+    medicoes: ordenarPorData([...base.medicoes, ...locais.medicoes]),
+    metas: resolverMetas(locais.metas, anoDe(conta.modo)),
     proprios: locais.torneios.length,
   };
+}
+
+const anoDe = (modo: ModoBase) =>
+  (modo === "demonstracao" ? HOJE : new Date()).getUTCFullYear();
+
+/**
+ * Achata os alvos guardados no ano corrente.
+ *
+ * Metas são do ano: virou o ano, os alvos voltam ao padrão em vez de arrastar
+ * uma promessa de doze meses atrás. Devolver `null` para o que não foi definido
+ * deixa a decisão de qual é o padrão onde ela pertence — em `painel.ts`, que é
+ * quem sabe quanto o jogador aportou e o que faz sentido como alvo de banca.
+ */
+function resolverMetas(
+  guardadas: Record<string, MetaDefinida>,
+  ano: number,
+): Record<ChaveMeta, MetaDefinida | null> {
+  const saida = {} as Record<ChaveMeta, MetaDefinida | null>;
+  for (const chave of CHAVES_META) saida[chave] = guardadas[`${ano}:${chave}`] ?? null;
+  return saida;
 }
 
 /** Instantâneo do servidor: imutável e sempre a mesma referência. */
@@ -243,6 +284,8 @@ function ler(modo: ModoBase): Registros {
       jogadores: dados.jogadores ?? {},
       mesaAtual: dados.mesaAtual ?? [],
       diario: dados.diario ?? [],
+      medicoes: dados.medicoes ?? [],
+      metas: dados.metas ?? {},
     };
   } catch {
     // Armazenamento corrompido ou indisponível (modo privado, cota estourada):
@@ -519,6 +562,59 @@ export function fecharSessao(id: string, fechamento: FechamentoSessao) {
 
 export function removerCheckIn(id: string) {
   locais = { ...locais, diario: locais.diario.filter((d) => d.id !== id) };
+  gravar();
+  avisar();
+}
+
+// ── saúde técnica ──────────────────────────────────────────────────────────
+
+export type EntradaMedicao = Omit<MedicaoTecnica, "id" | "data">;
+
+/**
+ * Registra uma medição técnica com a data de agora.
+ *
+ * Nunca sobrescreve a anterior: é a série inteira que dá sentido ao cartão,
+ * porque "VPIP 23%" só vira informação ao lado de onde ele estava antes e de
+ * quando foi medido.
+ */
+export function registrarMedicao(entrada: EntradaMedicao): MedicaoTecnica {
+  const medicao: MedicaoTecnica = {
+    ...entrada,
+    id: `med-local-${crypto.randomUUID().slice(0, 8)}`,
+    data: new Date().toISOString(),
+  };
+  locais = { ...locais, medicoes: [...locais.medicoes, medicao] };
+  gravar();
+  avisar();
+  return medicao;
+}
+
+export function removerMedicao(id: string) {
+  locais = { ...locais, medicoes: locais.medicoes.filter((m) => m.id !== id) };
+  gravar();
+  avisar();
+}
+
+// ── metas ──────────────────────────────────────────────────────────────────
+
+/** Grava o alvo escolhido pelo jogador para uma meta do ano corrente. */
+export function definirMeta(chave: ChaveMeta, alvo: number, ativa: boolean) {
+  const ano = anoDe(conta.modo);
+  locais = {
+    ...locais,
+    metas: { ...locais.metas, [`${ano}:${chave}`]: { chave, alvo, ativa, ano } },
+  };
+  gravar();
+  avisar();
+}
+
+/** Devolve as metas do ano corrente aos padrões, apagando as escolhas. */
+export function restaurarMetas() {
+  const ano = anoDe(conta.modo);
+  const resto = Object.fromEntries(
+    Object.entries(locais.metas).filter(([chave]) => !chave.startsWith(`${ano}:`)),
+  );
+  locais = { ...locais, metas: resto };
   gravar();
   avisar();
 }

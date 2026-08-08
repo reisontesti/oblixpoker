@@ -1,6 +1,7 @@
 import type {
   DiarioMental,
   Jogador,
+  MedicaoTecnica,
   Meta,
   MetaTecnica,
   MovimentoBankroll,
@@ -26,6 +27,9 @@ import type {
  */
 
 export const HOJE = new Date("2026-08-07T12:00:00.000Z");
+
+/** Uma data relativa a HOJE, para a base semeada não depender do relógio. */
+const dias = (n: number) => new Date(HOJE.getTime() + n * 86_400_000);
 
 /** mulberry32 — pequeno, rápido e estável entre execuções. */
 function prng(semente: number) {
@@ -387,6 +391,32 @@ export const SAUDE_ANTERIOR: SaudeTecnica = {
   wtsd: 31.2,
   wsd: 49.8,
 };
+
+/**
+ * As mesmas duas amostras, agora como série datada.
+ *
+ * É esta forma que o produto usa; `SAUDE_ATUAL` e `SAUDE_ANTERIOR` continuam
+ * exportadas só porque descrevem os números de um jeito legível no fonte. O
+ * painel lê sempre as duas medições mais recentes daqui, então a demonstração
+ * e os dados do jogador percorrem exatamente o mesmo caminho — sem um ramo
+ * "se for demonstração" no cálculo, que é onde erro se esconde.
+ */
+export const MEDICOES: MedicaoTecnica[] = [
+  {
+    id: "med-1",
+    data: dias(-104).toISOString(),
+    origem: "PokerCraft",
+    maos: 18_400,
+    ...SAUDE_ANTERIOR,
+  },
+  {
+    id: "med-2",
+    data: dias(-12).toISOString(),
+    origem: "PokerCraft",
+    maos: 21_900,
+    ...SAUDE_ATUAL,
+  },
+];
 
 export const METAS_TECNICAS: MetaTecnica[] = [
   {

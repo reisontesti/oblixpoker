@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Conclusao } from "@/components/torneios/Conclusao";
 import { EscalaEnergia } from "@/components/torneios/EscalaEnergia";
+import { SaudeDaSessao } from "@/components/torneios/SaudeDaSessao";
 import {
   CampoEscolha,
   CampoNumero,
   CampoTexto,
   CampoTextoLongo,
 } from "@/components/ui/Campo";
-import { registrar } from "@/lib/data/repositorio";
+import { registrar, registrarMedicao, type EntradaMedicao } from "@/lib/data/repositorio";
 import { moeda, moedaComSinal } from "@/lib/format";
 import { useClubes, useRegistros } from "@/lib/painel";
 import type { NivelEnergia, Torneio } from "@/lib/types";
@@ -98,13 +99,15 @@ const INICIAL: Formulario = {
 const emMinutos = (h: number | null, m: number | null) => (h ?? 0) * 60 + (m ?? 0);
 
 export default function NovoTorneio() {
-  const { perfil, diaCorrente } = useRegistros();
+  const { perfil, diaCorrente, hoje, medicoes } = useRegistros();
   const clubes = useClubes();
+  const ultimaMedicao = medicoes.at(-1) ?? null;
 
   const [passo, setPasso] = useState(0);
   const [form, setForm] = useState<Formulario>(INICIAL);
   const [semeadoCom, setSemeadoCom] = useState<string | null>(null);
   const [tentouAvancar, setTentouAvancar] = useState(false);
+  const [medicao, setMedicao] = useState<EntradaMedicao | null>(null);
   const [salvo, setSalvo] = useState<{ torneio: Torneio; investimento: number } | null>(null);
 
   // Os padrões do jogador entram uma vez só, assim que o cliente resolve quem
@@ -214,6 +217,11 @@ export default function NovoTorneio() {
             }
           : null,
     });
+    // A medição é gravada como registro próprio, com a data de agora. Ela
+    // descreve o estado do jogo naquele momento, não o torneio — e é por isso
+    // que sobrevive mesmo se o torneio for apagado depois.
+    if (medicao && medicao.pfr <= medicao.vpip) registrarMedicao(medicao);
+
     setSalvo({ torneio, investimento });
   }
 
@@ -576,6 +584,13 @@ export default function NovoTorneio() {
                   placeholder="A bolha é onde eu mais perco valor."
                   valor={form.aprendizado}
                   aoMudar={(v) => definir("aprendizado", v)}
+                />
+
+                <SaudeDaSessao
+                  ultima={ultimaMedicao}
+                  hoje={hoje}
+                  valor={medicao}
+                  aoMudar={setMedicao}
                 />
               </div>
             </>

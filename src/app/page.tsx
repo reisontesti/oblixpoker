@@ -60,6 +60,7 @@ export default function Painel() {
 
   const semDados = atual.resumo.torneios === 0;
   const primeiraVez = dados.modo === "proprio" && geral.torneios === 0;
+  const metaMesasFinais = dados.metas.find((m) => m.id === "mesas-finais" && m.ativa) ?? null;
   const base = BASE_PERIODO[periodo];
 
   return (
@@ -158,17 +159,22 @@ export default function Painel() {
             faisca={{ valores: faiscas.disciplina, descricao: "Nota média de disciplina por mês" }}
           />
 
+          {/* Segue o alvo que o jogador definiu no cartão de Metas. Repetir um
+              20 fixo aqui faria o painel discordar de si mesmo assim que
+              alguém trocasse a meta. */}
           <Indicador
             atraso={180}
             rotulo={`Mesas finais em ${dados.hoje.getUTCFullYear()}`}
             valor={dados.mesasFinaisAno}
             formatar={(v) => String(Math.round(v))}
-            sufixo="/ 20"
-            medidor={dados.mesasFinaisAno / 20}
+            sufixo={metaMesasFinais ? `/ ${metaMesasFinais.alvo}` : undefined}
+            medidor={metaMesasFinais ? dados.mesasFinaisAno / metaMesasFinais.alvo : undefined}
             nota={
-              dados.mesasFinaisAno >= 20
-                ? "Meta do ano concluída"
-                : `Faltam ${20 - dados.mesasFinaisAno} para a meta do ano`
+              !metaMesasFinais
+                ? "Sem meta definida para o ano"
+                : dados.mesasFinaisAno >= metaMesasFinais.alvo
+                  ? "Meta do ano concluída"
+                  : `Faltam ${metaMesasFinais.alvo - dados.mesasFinaisAno} para a meta do ano`
             }
           />
 
@@ -196,7 +202,12 @@ export default function Painel() {
         </div>
 
         <div className="min-w-0 lg:col-span-7">
-          <SaudeTecnica saude={dados.saude} atraso={300} />
+          <SaudeTecnica
+            saude={dados.saude}
+            medicao={dados.medicaoAtual}
+            hoje={dados.hoje}
+            atraso={300}
+          />
         </div>
         <div className="min-w-0 lg:col-span-5">
           <Metas metas={dados.metas} atraso={340} />

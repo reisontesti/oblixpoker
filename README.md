@@ -233,6 +233,42 @@ de sentar deixava de contar como "hoje".
 
 ---
 
+## Metas e saúde técnica
+
+As duas dependem de um número que o Oblix **não tem como medir sozinho**, e cada
+uma resolve isso de um jeito diferente.
+
+**Nas metas, o jogador define só o alvo.** O valor atingido continua saindo dos
+registros, e é isso que impede a meta de virar um checkbox que alguém marca
+sozinho. Pelo mesmo motivo as quatro chaves são fixas: cada uma corresponde a
+uma métrica que o produto já calcula, e uma meta livre — "estudar duas horas por
+semana" — seria uma promessa que ninguém tem como verificar.
+
+A edição fica no próprio cartão do Dashboard, não numa página à parte: quem
+decide mudar um alvo é justamente quem acabou de olhar o progresso. E "no ritmo"
+é sempre dois terços do alvo, em vez de um número absoluto — assim quem troca 20
+mesas finais por 6 continua sendo lido com o mesmo critério, e nenhuma meta
+editada nasce atrasada por acidente.
+
+**Na saúde técnica, o jogador digita os números.** VPIP, PFR e companhia vêm do
+tracker ou da sala, e o Oblix não importa histórico de mãos — estimar por
+aproximação atribuiria a alguém um estilo que ninguém mediu, justamente no cartão
+que serve para se corrigir.
+
+O momento de informar é ao registrar um torneio, e o que evita que isso vire
+pedágio são duas escolhas: o bloco vem **fechado e é opcional** (campo
+obrigatório que a pessoa não pode responder na hora vira número inventado, que é
+pior do que nada), e vem **preenchido com a última medição**, então confirmar é
+um clique quando nada mudou.
+
+Guardar uma **série datada**, e não dois retratos de "atual" e "anterior", é o
+que faz a cadência virar dado: quem joga todo dia mede quase sempre, quem joga
+uma vez por mês mede uma vez por mês, e o cartão consegue dizer "medido há cinco
+meses" — com aviso a partir de quatro, o mesmo limiar das leituras de adversário
+e pela mesma razão.
+
+---
+
 ## Decisões de análise que valem conhecer
 
 **Profundidade em vez de ROI para amostras pequenas.** ROI vira de sinal com um

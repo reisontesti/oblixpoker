@@ -109,6 +109,26 @@ export interface SaudeTecnica {
   wsd: number;
 }
 
+/**
+ * Uma medição técnica datada.
+ *
+ * O Oblix não importa histórico de mãos, então estes números o jogador copia
+ * do tracker ou da sala. Guardar uma SÉRIE, e não dois retratos fixos de
+ * "atual" e "anterior", é o que faz a cadência virar dado: quem joga todo dia
+ * mede toda semana, quem joga uma vez por mês mede uma vez por mês, e o painel
+ * consegue dizer há quanto tempo aquilo foi medido em vez de apresentar uma
+ * amostra de oito meses com a confiança de uma de ontem.
+ */
+export interface MedicaoTecnica extends SaudeTecnica {
+  id: string;
+  /** ISO. Quando o jogador informou os números. */
+  data: string;
+  /** De onde vieram — para não misturar amostras de salas diferentes. */
+  origem: string;
+  /** Tamanho da amostra, quando o jogador souber. */
+  maos: number | null;
+}
+
 export interface MetaTecnica {
   chave: keyof SaudeTecnica;
   rotulo: string;
@@ -140,6 +160,27 @@ export interface Meta {
   alvo: number;
   unidade: "torneios" | "reais" | "nota" | "percentual";
   prazo: string;
+}
+
+export const CHAVES_META = ["mesas-finais", "banca", "disciplina", "titulos"] as const;
+
+export type ChaveMeta = (typeof CHAVES_META)[number];
+
+/**
+ * O que o jogador define numa meta: só o ALVO e se ela está valendo.
+ *
+ * O valor atingido continua saindo dos registros, e é isso que impede a meta de
+ * virar um checkbox — "concluída" nunca depende de alguém lembrar de marcar.
+ * Pelo mesmo motivo as quatro chaves são fixas: cada uma corresponde a uma
+ * métrica que o Oblix sabe medir sozinho, e uma meta livre ("estudar duas horas
+ * por semana") seria uma promessa que o produto não tem como verificar.
+ */
+export interface MetaDefinida {
+  chave: ChaveMeta;
+  alvo: number;
+  ativa: boolean;
+  /** Metas são do ano; virou o ano, os alvos voltam ao padrão. */
+  ano: number;
 }
 
 export type TipoNota = "leitura" | "tell" | "exploracao" | "geral";

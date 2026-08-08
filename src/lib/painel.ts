@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { METAS_TECNICAS, SAUDE_ANTERIOR, SAUDE_ATUAL } from "@/lib/data/seed";
+import { METAS_TECNICAS } from "@/lib/data/seed";
 import {
   assinar,
   obterInstantaneo,
   obterInstantaneoServidor,
   type Estado,
-  type ModoBase,
 } from "@/lib/data/repositorio";
 import {
   ehMesaFinal,
@@ -29,7 +28,7 @@ import {
   estatisticasSatelites,
   recomendar,
 } from "@/lib/calc/satelites";
-import type { LinhaSaude } from "@/lib/types";
+import type { ChaveMeta, LinhaSaude, MedicaoTecnica } from "@/lib/types";
 import { gerarInsights } from "@/lib/calc/insights";
 
 /**
@@ -62,40 +61,63 @@ export function useClubes(): string[] {
 export type EstadoMeta = "concluida" | "no_ritmo" | "atencao" | "nao_comecou";
 
 export interface MetaCalculada {
-  id: string;
+  id: ChaveMeta;
   titulo: string;
   detalhe: string;
   atual: number;
   alvo: number;
+  /** Desligada some do cartão, mas continua editável no modo de edição. */
+  ativa: boolean;
   progresso: number;
   estado: EstadoMeta;
   formatar: (v: number) => string;
+  /** Como o alvo se comporta no campo de edição. */
+  editar: {
+    rotulo: string;
+    prefixo?: string;
+    passo: number;
+    minimo: number;
+    maximo?: number;
+  };
 }
 
 /**
- * Indicadores técnicos (VPIP, PFR, 3bet…) só existem na demonstração.
+ * Onde "no ritmo" começa, como fração do alvo.
  *
- * Eles vêm de histórico de mãos, e o Oblix ainda não importa nenhum. Exibir a
- * amostra semeada para quem está nos próprios dados seria atribuir ao jogador
- * um estilo de jogo que ninguém mediu — pior do que não mostrar nada. No modo
- * próprio o cartão fica vazio e diz por quê.
+ * Uma régua relativa e não um número absoluto: quem troca 20 mesas finais por
+ * 6 continua sendo lido com o mesmo critério, e nenhuma meta editada passa a
+ * nascer atrasada por acidente.
  */
-function avaliarSaude(modo: ModoBase): LinhaSaude[] {
-  if (modo !== "demonstracao") return [];
+const DOIS_TERCOS = 2 / 3;
+
+/**
+ * Confronta a última medição técnica com a faixa saudável e com a penúltima.
+ *
+ * Sem medição nenhuma devolve vazio, e o cartão explica de onde esses números
+ * vêm — estimar o estilo de jogo de alguém por aproximação seria pior do que
+ * não mostrar nada, justamente no cartão que a pessoa consultaria para se
+ * corrigir. Com uma só, a coluna "anterior" repete a atual: não há evolução a
+ * mostrar ainda, e inventar um ponto de partida criaria uma seta falsa.
+ */
+function avaliarSaude(medicoes: MedicaoTecnica[]): LinhaSaude[] {
+  const atual = medicoes.at(-1);
+  if (!atual) return [];
+  const anterior = medicoes.at(-2) ?? atual;
+
   return METAS_TECNICAS.map((m) => {
-    const valor = SAUDE_ATUAL[m.chave];
-    const anterior = SAUDE_ANTERIOR[m.chave];
+    const valor = atual[m.chave];
+    const antes = anterior[m.chave];
     const distancia = (v: number) => (v < m.min ? m.min - v : v > m.max ? v - m.max : 0);
     return {
       chave: m.chave,
       rotulo: m.rotulo,
       descricao: m.descricao,
       valor,
-      anterior,
+      anterior: antes,
       min: m.min,
       max: m.max,
       estado: valor < m.min ? "abaixo" : valor > m.max ? "acima" : "dentro",
-      melhorou: distancia(valor) < distancia(anterior),
+      melhorou: distancia(valor) < distancia(antes),
     };
   });
 }
@@ -159,50 +181,77 @@ export function usePainel(periodo: PeriodoChave) {
     const ritmo = (concluida: boolean, noRitmo: boolean): EstadoMeta =>
       concluida ? "concluida" : aindaNaoComecou ? "nao_comecou" : noRitmo ? "no_ritmo" : "atencao";
 
+    // O alvo do jogador vence o padrão; "no ritmo" é sempre dois terços do
+    // caminho, seja o alvo dele ou o nosso. Amarrar a régua ao alvo em vez de
+    // fixá-la em número absoluto é o que mantém a leitura coerente quando
+    // alguém troca 20 mesas finais por 6.
+    const alvoDe = (chave: ChaveMeta, padrao: number) =>
+      registros.metas[chave]?.alvo ?? padrao;
+    const ativa = (chave: ChaveMeta) => registros.metas[chave]?.ativa ?? true;
+
+    const alvoMesasFinais = alvoDe("mesas-finais", 20);
+    const alvoBanca = alvoDe("banca", metaBanca);
+    const alvoDisciplina = alvoDe("disciplina", 9);
+    const alvoTitulos = alvoDe("titulos", 3);
+
     const metas: MetaCalculada[] = [
       {
         id: "mesas-finais",
         titulo: `Mesas finais em ${ANO_CORRENTE}`,
         detalhe: "Chegar entre os 9 últimos",
         atual: mesasFinaisAno,
-        alvo: 20,
-        progresso: Math.min(1, mesasFinaisAno / 20),
-        estado: ritmo(mesasFinaisAno >= 20, mesasFinaisAno >= 12),
+        alvo: alvoMesasFinais,
+        ativa: ativa("mesas-finais"),
+        progresso: Math.min(1, mesasFinaisAno / alvoMesasFinais),
+        estado: ritmo(
+          mesasFinaisAno >= alvoMesasFinais,
+          mesasFinaisAno >= alvoMesasFinais * DOIS_TERCOS,
+        ),
         formatar: (v) => String(Math.round(v)),
+        editar: { rotulo: "Mesas finais no ano", passo: 1, minimo: 1 },
       },
       {
         id: "banca",
-        titulo: `Banca de R$ ${metaBanca.toLocaleString("pt-BR")}`,
+        titulo: `Banca de R$ ${alvoBanca.toLocaleString("pt-BR")}`,
         detalhe: "Sem aportes novos",
         atual: bankroll,
-        alvo: metaBanca,
-        progresso: Math.min(1, bankroll / metaBanca),
-        estado: ritmo(bankroll >= metaBanca, bankroll >= metaBanca * 0.66),
+        alvo: alvoBanca,
+        ativa: ativa("banca"),
+        progresso: Math.min(1, bankroll / alvoBanca),
+        estado: ritmo(bankroll >= alvoBanca, bankroll >= alvoBanca * DOIS_TERCOS),
         formatar: (v) => `R$ ${Math.round(v).toLocaleString("pt-BR")}`,
+        editar: { rotulo: "Banca que quero alcançar", prefixo: "R$", passo: 100, minimo: 100 },
       },
       {
         id: "disciplina",
-        titulo: "Disciplina média 9,0",
+        titulo: `Disciplina média ${alvoDisciplina.toFixed(1).replace(".", ",")}`,
         detalhe: "Média dos últimos 20 torneios",
         atual: disciplinaRecente,
-        alvo: 9,
-        progresso: Math.min(1, disciplinaRecente / 9),
-        estado: ritmo(disciplinaRecente >= 9, disciplinaRecente >= 8),
+        alvo: alvoDisciplina,
+        ativa: ativa("disciplina"),
+        progresso: Math.min(1, disciplinaRecente / alvoDisciplina),
+        estado: ritmo(
+          disciplinaRecente >= alvoDisciplina,
+          disciplinaRecente >= alvoDisciplina * DOIS_TERCOS,
+        ),
         formatar: (v) => v.toFixed(1).replace(".", ","),
+        editar: { rotulo: "Nota média de disciplina", passo: 0.5, minimo: 1, maximo: 10 },
       },
       {
         id: "titulos",
         titulo: `Títulos em ${ANO_CORRENTE}`,
         detalhe: "Vencer um torneio inteiro",
         atual: titulosAno,
-        alvo: 3,
-        progresso: Math.min(1, titulosAno / 3),
-        estado: ritmo(titulosAno >= 3, titulosAno >= 2),
+        alvo: alvoTitulos,
+        ativa: ativa("titulos"),
+        progresso: Math.min(1, titulosAno / alvoTitulos),
+        estado: ritmo(titulosAno >= alvoTitulos, titulosAno >= alvoTitulos * DOIS_TERCOS),
         formatar: (v) => String(Math.round(v)),
+        editar: { rotulo: "Títulos no ano", passo: 1, minimo: 1 },
       },
     ];
 
-    const saude = avaliarSaude(registros.modo);
+    const saude = avaliarSaude(registros.medicoes);
     const energia = porEnergia(TORNEIOS, IDX);
 
     return {
@@ -241,6 +290,7 @@ export function usePainel(periodo: PeriodoChave) {
       energiaPorVia: distribuicaoEnergia(TORNEIOS),
       mensal: porMes(TORNEIOS, IDX),
       saude,
+      medicaoAtual: registros.medicoes.at(-1) ?? null,
       metas,
       disciplinaRecente,
       mesasFinaisAno,

@@ -3,8 +3,8 @@
 import { CabecalhoPlaca, Placa } from "@/components/ui/Placa";
 import { Vazio } from "@/components/ui/Vazio";
 import { TabelaDados } from "@/components/viz/TabelaDados";
-import type { LinhaSaude } from "@/lib/types";
-import { decimal } from "@/lib/format";
+import type { LinhaSaude, MedicaoTecnica } from "@/lib/types";
+import { decimal, haQuantoTempo } from "@/lib/format";
 
 const ESTADO = {
   dentro: { rotulo: "Na faixa", cor: "var(--color-positivo)", icone: "✓" },
@@ -73,13 +73,31 @@ function Trilho({ linha }: { linha: LinhaSaude }) {
   );
 }
 
-export function SaudeTecnica({ saude, atraso = 0 }: { saude: LinhaSaude[]; atraso?: number }) {
+interface Props {
+  saude: LinhaSaude[];
+  /** A medição que originou estes números — nula quando não há nenhuma. */
+  medicao: MedicaoTecnica | null;
+  hoje: Date;
+  atraso?: number;
+}
+
+/**
+ * Idade a partir da qual a medição deixa de descrever o jogador de agora.
+ *
+ * Quatro meses é o mesmo limiar das leituras de adversário, pela mesma razão:
+ * nesse intervalo a pessoa estudou, mudou de stake e corrigiu vazamento. Um
+ * VPIP de oito meses exibido com a confiança de um de ontem faria o jogador se
+ * corrigir na direção de quem ele já não é.
+ */
+const DIAS_ATE_VENCER = 120;
+
+export function SaudeTecnica({ saude, medicao, hoje, atraso = 0 }: Props) {
   const dentro = saude.filter((s) => s.estado === "dentro").length;
 
-  // VPIP, PFR e 3bet vêm de histórico de mãos, que o Oblix ainda não importa.
-  // Preencher com estimativa seria atribuir ao jogador um estilo que ninguém
-  // mediu — e este cartão é justamente o que ele consultaria para se corrigir.
-  if (saude.length === 0) {
+  // Estes números o Oblix não mede: vêm do tracker ou da sala, e é o jogador
+  // que digita. Estimar por aproximação seria atribuir a ele um estilo que
+  // ninguém mediu — justamente no cartão que ele consultaria para se corrigir.
+  if (saude.length === 0 || !medicao) {
     return (
       <Placa atraso={atraso}>
         <CabecalhoPlaca
@@ -87,19 +105,43 @@ export function SaudeTecnica({ saude, atraso = 0 }: { saude: LinhaSaude[]; atras
           descricao="VPIP, PFR, 3bet e agressão pós-flop"
         />
         <Vazio
-          titulo="Estes números vêm do histórico de mãos"
-          corpo="O Oblix ainda não importa histórico da sala, e prefere deixar o espaço em branco a estimar o seu estilo de jogo por aproximação. O resto do painel funciona sem eles."
+          titulo="Estes números é você quem informa"
+          corpo="O Oblix não lê o histórico de mãos da sala. Ao registrar um torneio há um passo opcional para copiar VPIP, PFR e companhia do seu tracker — e daí em diante este cartão mostra a faixa saudável e para onde você andou."
+          acao={{ rotulo: "Registrar um torneio", href: "/torneios/novo" }}
         />
       </Placa>
     );
   }
+
+  const dias = Math.floor((hoje.getTime() - new Date(medicao.data).getTime()) / 86_400_000);
+  const vencida = dias > DIAS_ATE_VENCER;
 
   return (
     <Placa atraso={atraso}>
       <CabecalhoPlaca
         titulo="Saúde técnica"
         descricao={`${dentro} de ${saude.length} indicadores dentro da faixa saudável para o seu estilo`}
+        acessorio={
+          <span
+            className="whitespace-nowrap text-[11px]"
+            style={{ color: vencida ? "var(--color-atencao)" : "var(--color-ink-muted)" }}
+          >
+            {vencida && (
+              <span aria-hidden className="mr-1">
+                !
+              </span>
+            )}
+            medido {haQuantoTempo(medicao.data, hoje)}
+          </span>
+        }
       />
+
+      {vencida && (
+        <p className="px-6 pb-1 text-[12px] leading-relaxed text-ink-secondary sm:px-7">
+          Faz mais de quatro meses. Nesse intervalo você estudou e talvez tenha mudado de
+          stake — vale reinformar no próximo torneio antes de se corrigir por estes números.
+        </p>
+      )}
       <div className="px-6 pb-5 sm:px-7">
         <ul className="divide-y divide-hairline">
           {saude.map((linha) => (
