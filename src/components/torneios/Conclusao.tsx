@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CampoNumero } from "@/components/ui/Campo";
+import { Pix, pixConfigurado } from "@/components/torneios/Pix";
 import { moeda, moedaComSinal, ordinal } from "@/lib/format";
 import type { Torneio } from "@/lib/types";
 
@@ -33,6 +34,13 @@ function PedidoDeApoio({ premiacao }: { premiacao: number }) {
     escolha === "outro" ? outroValor : escolha !== null ? Math.round(premiacao * escolha) : null;
 
   if (estado === "agradecendo") {
+    // Com Pix configurado, o agradecimento JÁ é o meio de pagar: mandar a
+    // pessoa para outra tela depois de ela decidir apoiar é onde a intenção
+    // morre. Sem chave configurada, o texto diz a verdade em vez de encenar
+    // uma transação que não existe.
+    if (pixConfigurado && valorEscolhido && valorEscolhido > 0) {
+      return <Pix valor={valorEscolhido} />;
+    }
     return (
       <div className="surgir rounded-2xl border border-hairline bg-sunken px-5 py-6 text-center">
         <p className="text-[15px] font-medium text-ink">Obrigado de verdade.</p>
@@ -127,7 +135,11 @@ function PedidoDeApoio({ premiacao }: { premiacao: number }) {
           onClick={() => setEstado("agradecendo")}
           className="flex-1 cursor-pointer rounded-xl bg-[var(--color-positivo)] px-4 py-2.5 text-[13.5px] font-semibold text-plane transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
         >
-          {valorEscolhido ? `Apoiar com ${moeda(valorEscolhido)}` : "Apoiar o projeto"}
+          {valorEscolhido
+            ? pixConfigurado
+              ? `Apoiar com ${moeda(valorEscolhido)} via Pix`
+              : `Apoiar com ${moeda(valorEscolhido)}`
+            : "Apoiar o projeto"}
         </button>
         <button
           type="button"
