@@ -1,0 +1,310 @@
+# Oblix
+
+Sistema operacional para jogadores de poker. Este repositório contém o MVP das
+duas primeiras entregas: o **Dashboard** e a feature de **Satélites**.
+
+```bash
+npm run dev     # desenvolvimento em http://localhost:3000
+npm run build   # build de produção
+npx eslint .    # lint
+```
+
+Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Geist.
+Dark-only por decisão de produto. Interface inteira em pt-BR.
+
+---
+
+## O que está construído
+
+| Rota | Estado |
+|---|---|
+| `/` | Dashboard completo |
+| `/satelites` | Análise de satélites completa |
+| `/torneios` | Histórico com filtros; apaga só o que você registrou |
+| `/torneios/novo` | Registro em 4 etapas, com o pedido de apoio ao final |
+| `/jogadores` | Banco de adversários: busca, edição e registro de campo |
+| `/mesa` | **Modo Mesa** — as leituras dos adversários sentados com você |
+| `/diario` | Check-in pré-jogo, fecho da sessão e o cruzamento estado × resultado |
+
+Todo o PRD está construído. Metas não tem página própria de propósito: o
+conteúdo inteiro já vive no Dashboard, e uma entrada desabilitada na navegação
+seria promessa vazia.
+
+O que você registra é gravado em `localStorage` e entra imediatamente em todos
+os cálculos — banca, ROI, satélites, insights. Não há backend ainda.
+
+---
+
+## As duas bases
+
+Na primeira visita o Oblix pergunta uma coisa só: explorar a demonstração ou
+começar com os seus dados.
+
+A pergunta existe porque o painel abre com R$ 10.136 de banca e 78% de ROI em
+tipografia grande, e número grande é lido como verdade. Sem essa pergunta, um
+jogador não tem como saber que aquele ROI não é o dele — um selo discreto no
+canto não competiria com a figura no meio da tela.
+
+**São bases separadas, não filtros sobre a mesma base**
+([`repositorio.ts`](src/lib/data/repositorio.ts)):
+
+```
+demonstracao → base semeada + oblix:registros:v1
+proprio      → só oblix:registros:proprio:v1
+```
+
+Cada modo tem o seu balde, então **trocar não apaga nada** e a troca não precisa
+de aviso dramático: quem entra nos próprios dados pode voltar para a
+demonstração, e volta encontrando tudo onde deixou. É o que permite oferecer
+"ver a demonstração" no painel vazio sem risco — a essa altura é exatamente o
+que a pessoa quer, para saber como aquilo fica cheio.
+
+O instantâneo do servidor devolve **sempre** o modo demonstração. É o que evita
+divergência de hidratação, e é por isso que existem duas bandeiras separadas:
+`pronto` (o cliente já leu a conta) e `decidiu` (o jogador já escolheu). Fossem
+uma só, o HTML do servidor traria as boas-vindas embutidas e elas piscariam na
+cara de quem já decidiu, a cada carregamento.
+
+### O que muda no modo próprio
+
+- **A saúde técnica fica vazia, e diz por quê.** VPIP, PFR e 3bet vêm de
+  histórico de mãos, que o Oblix não importa. Reaproveitar a amostra semeada
+  atribuiria ao jogador um estilo que ninguém mediu — justamente no cartão que
+  ele consultaria para se corrigir.
+- **A meta de banca acompanha de onde ele partiu** (o dobro do aporte inicial).
+  Os R$ 12.000 fixos da demonstração seriam um número estrangeiro, longe o
+  bastante para a barra nunca sair do lugar.
+- **Nenhuma meta acusa atraso no dia zero.** Quem não registrou nada não está
+  atrasado, não começou — e o âmbar perde significado quando é o estado padrão
+  de todo mundo.
+- **"Hoje" passa a ser o relógio de verdade.** Na demonstração continua sendo a
+  data congelada do seed, senão os 14 meses de história apareceriam como um
+  bloco no passado remoto.
+- **Clube vira campo de texto com sugestões.** A lista de clubes de quem começou
+  do zero nasce vazia e cresce com o que ele digita; um `select` fechado deixaria
+  o primeiro registro impossível de preencher.
+
+### Estados vazios
+
+Um painel recém-aberto é quase todo composto por eles, então
+[`Vazio.tsx`](src/components/ui/Vazio.tsx) segue duas regras: dizer **o que
+aquele espaço vai mostrar** em vez de anunciar que está vazio — "sem dados" é
+informação que o próprio branco já deu — e oferecer o próximo passo como botão
+sempre que existir um óbvio.
+
+Vale também para "Insights" sem nenhum insight, que não é falha e sim o piso de
+amostra funcionando: abaixo de seis registros o Oblix se cala, e o estado vazio
+precisa dizer isso, senão parece que o produto não faz nada.
+
+---
+
+## As duas decisões que definem o produto
+
+### 1. Comparar ROI entre as vias de entrada mente
+
+Uma vaga de R$ 150 conquistada num satélite de R$ 20 tem denominador oito vezes
+menor. O ROI dela infla por aritmética, não por desempenho — na base de
+demonstração, o ROI "cru" via satélite aparece como **95%** contra **78%** da
+entrada direta, sugerindo exatamente o contrário do que os dados dizem.
+
+Por isso o custo de entrada é medido de duas formas
+([`metricas.ts`](src/lib/calc/metricas.ts)):
+
+- `investimento()` — o que foi **efetivamente pago**;
+- `investimentoABalcao()` — cobrando o buy-in de balcão dos dois lados.
+
+Com o custo igualado, o desempenho real aparece: **78% entrando direto contra 5%
+via satélite**.
+
+### 2. O veredito é uma soma de duas forças opostas
+
+O satélite **barateia a vaga** (ganho) e, quando cansa o jogador, **piora o
+desempenho na mesa** (perda). As duas são medidas separadamente e somadas
+([`satelites.ts`](src/lib/calc/satelites.ts)):
+
+```
+economia na vaga    +R$ 41,19   por torneio
+diferença na mesa   −R$ 83,44   por torneio
+                    ─────────
+saldo               −R$ 42,25   por torneio
+```
+
+A identidade fecha exatamente contra `deltaLucroPorTorneio` — os termos se
+cancelam porque, na entrada direta, custo pago e custo de balcão são o mesmo
+número. O painel mostra a conta, não só a conclusão.
+
+O Oblix **não assume** que satélite é bom nem ruim. Abaixo de 8 registros por
+via, ele diz que ainda não sabe em vez de inventar convicção.
+
+---
+
+### 3. A via de entrada não é perguntada — é deduzida
+
+No formulário o jogador informa se **jogou** o satélite e se **classificou**. A
+via sai daí: só é entrada via satélite quem jogou *e* ganhou a vaga. Perguntar a
+via num terceiro campo abriria espaço para os dados se contradizerem no banco, e
+é justamente essa a coluna de que todo o comparativo depende.
+
+Um satélite perdido não vira vínculo: fica como custo avulso na banca, que é o
+que ele é. Ver `registrar()` em
+[`repositorio.ts`](src/lib/data/repositorio.ts).
+
+---
+
+## Monetização
+
+O PRD pede que, ao registrar uma premiação, o produto apresente o pedido de
+apoio (5% / 10% / 15% / outro valor / agora não). Está em
+[`Conclusao.tsx`](src/components/torneios/Conclusao.tsx), e segue duas regras
+deliberadas:
+
+- **"Agora não" é um botão de verdade** — mesmo tamanho, mesmo contraste, ao
+  lado do botão de apoiar. Um produto gratuito que esconde a saída do pedido de
+  doação deixa de parecer gratuito.
+- **Nada é cobrado e nada é simulado.** Não há integração de pagamento ligada; a
+  tela de agradecimento diz isso com todas as letras em vez de encenar uma
+  transação que não aconteceu.
+
+Sem premiação, o fecho é outro: em vez do pedido, explica por que registrar um
+torneio sem prêmio também vale — ele entra no ROI, na leitura de energia e na
+comparação entre as vias.
+
+---
+
+## Banco de adversários e Modo Mesa
+
+O CRM é o único módulo que muda decisão **durante** a mão, então foi construído
+em torno do uso ao vivo, não do cadastro.
+
+**A cor do perfil codifica ameaça, não categoria.** Seis matizes de badge — uma
+por perfil — seriam ruído numa tela lida de relance embaixo da mesa. O selo
+carrega uma informação só: âmbar para quem joga bem, jade para quem é
+oportunidade. O nome do perfil está sempre ao lado, então nada depende da cor.
+Os cartões chegam agrupados em **Cuidado / Imprevisíveis / Oportunidade**, que é
+a pergunta real de quem senta na mesa.
+
+**A hierarquia do cartão segue a urgência.** Nome, perfil e "como explorar"
+ficam visíveis; pontos fortes, histórico e registro de campo ficam atrás de um
+toque. O que serve para estudar não pode disputar espaço com o que serve para a
+mão em andamento.
+
+**Anotação de poker envelhece, e o produto assume isso.** Cada adversário guarda
+`atualizadoEm`, e uma leitura de mais de quatro meses aparece com aviso — o
+adversário estuda, corrige o vazamento que você anotou, muda de stake. Exibir
+uma leitura vencida com a mesma confiança de uma de ontem é pior do que não
+exibir nada.
+
+**A captura tem que ser mais rápida que a mão.** Anotar é escolher um tipo e
+escrever; Enter salva. Se exigisse abrir formulário e sair da mesa, ninguém
+anotaria — e um banco de adversários vazio não ajuda ninguém.
+
+---
+
+## Diário mental
+
+**O check-in é um freio, não um formulário.** Responder "sim" a "estou tentando
+recuperar perdas?" interrompe o fluxo e mostra o histórico do próprio jogador
+naquele estado. Duas regras seguram a honestidade disso:
+
+- **"Vou jogar mesmo assim" continua sendo um botão de verdade.** Um freio que
+  não pode ser solto vira obstáculo, e o jogador simplesmente passa a responder
+  a pergunta de forma conveniente — que é o único jeito de a feature perder todo
+  o valor.
+- **Não jogar é um resultado registrado, e celebrado.** O check-in fica salvo
+  como decisão consciente, não como campo em branco.
+
+**Antes e depois não são a mesma coisa, e o texto sabe disso.** "Dormi bem?" é
+respondido antes de sentar, então uma diferença no resultado pode ser lida como
+influência. "Houve tilt?" é respondido depois — e tilt costuma ser consequência
+de ter perdido. Cada contraste carrega seu momento, e as leituras pós-jogo saem
+marcadas com a ressalva de que descrevem a sessão sem provar causa. Tratar as
+duas igual faria o produto afirmar que evitar tilt melhora o resultado quando o
+que os dados mostram é que perder provoca tilt.
+
+**Profundidade parada com ITM muito diferente não é "nada acontecendo".** Quando
+os dois lados terminam à mesma altura do campo mas convertem de forma distinta,
+a leitura passa a falar de ITM — é ir igual de fundo e fechar menos, que é o
+achado mais útil daquele contraste.
+
+**O dia corrente vem do relógio do jogador**, resolvido no repositório junto com
+o resto do estado de cliente. Comparar em UTC quebrava justamente no horário de
+uso: às 21h em Brasília o UTC já virou o dia seguinte, e o check-in feito antes
+de sentar deixava de contar como "hoje".
+
+---
+
+## Decisões de análise que valem conhecer
+
+**Profundidade em vez de ROI para amostras pequenas.** ROI vira de sinal com um
+único prêmio grande. `profundidade()` mede a fração do campo que ficou para trás
+(0 = primeiro eliminado, 1 = campeão) usando *todos* os torneios, não só os
+premiados. É o que permite ler a relação energia → resultado com 12 registros.
+
+**Insights têm piso de amostra.** Nada com menos de 6 registros vira insight
+([`insights.ts`](src/lib/calc/insights.ts)). A leitura de energia agrega as duas
+pontas da escala em vez de eleger níveis isolados — sem isso o painel afirmaria
+que "descansado" rende mais que "muito descansado", que é ruído.
+
+---
+
+## Sistema de cor
+
+Toda cor de dado passou pelo validador de paleta em modo dark sobre a superfície
+`#0E1011`. As decisões e os resultados estão registrados em
+[`palette.ts`](src/lib/viz/palette.ts).
+
+A tríade que aparece simultaneamente em tela — jade `#199e70`, azul `#3987e5`,
+laranja `#d95926` — passa `--pairs all`: CVD ΔE 9,4 (alvo ≥ 8), visão normal
+ΔE 20,9 (piso ≥ 15), todas ≥ 3:1 de contraste.
+
+**Teto de 3 séries simultâneas.** Nenhum conjunto de 4 matizes passa `--pairs
+all` nas faixas do modo dark — foi verificado por busca exaustiva, não estimado.
+Acima de três, dobrar em "Outros" ou facetar.
+
+Os papéis são separados de propósito:
+
+- **jade / vermelho / âmbar = estado** (lucro, prejuízo, atenção). Nunca viram
+  "série 4", e sempre vêm com ícone + rótulo, então a cor nunca informa sozinha.
+- **azul / laranja = identidade** (entrada direta × via satélite). Não carregam
+  juízo de bom ou ruim — é justamente isso que o produto quer descobrir, então a
+  cor não pode antecipar a resposta.
+- **conquista não recebe matiz, recebe luz.** Título e mesa final aparecem em
+  tinta branca com brilho, evitando disputar significado com o âmbar.
+
+Todo gráfico tem gêmea tabular ("Ver como tabela"), a curva tem crosshair com
+navegação por setas, e métricas de unidades diferentes vão para pequenos
+múltiplos com escala própria — nunca para um segundo eixo y.
+
+---
+
+## Base de demonstração
+
+[`seed.ts`](src/lib/data/seed.ts) gera 101 torneios e 56 satélites ao longo de 14
+meses a partir de um PRNG semeado: os mesmos registros saem no servidor e no
+cliente, sem divergência de hidratação. "Hoje" é constante, não `new Date()`.
+
+Duas regras a mantêm plausível:
+
+- **Gestão de banca.** Nenhum buy-in acima de 1/28 da banca. Sem isso a série
+  fura o zero numa sequência ruim, e banca negativa não existe.
+- **Causalidade real.** A energia é sorteada **antes** da colocação e governa o
+  expoente da distribuição: cansaço → decisões piores → elimina mais cedo. O
+  satélite entra nessa cadeia só como custo de energia. O motor de análise não é
+  informado de nada disso — ele precisa encontrar o padrão nos dados, que é
+  exatamente o que a feature promete fazer com dados reais.
+
+Para conferir os números da base:
+
+```bash
+npx tsx scripts/conferir-dados.ts
+npx tsx scripts/conferir-vazio.ts   # a base vazia como estado de primeira classe
+```
+
+O segundo confere o oposto do primeiro: que a cadeia inteira de análise
+atravessa zero registros sem estourar índice e sem inventar conclusão. É barato
+quebrar isso de um jeito que nenhum teste de tela pegaria, porque o painel cheio
+da demonstração continuaria funcionando.
+
+Quando houver backend, a troca é localizada: `seed.ts` exporta as mesmas
+estruturas que uma consulta ao Supabase devolveria, e nada em `calc/` sabe de
+onde os dados vieram.

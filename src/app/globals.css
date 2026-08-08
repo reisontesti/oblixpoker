@@ -1,0 +1,209 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OBLIX — sistema visual
+   Dark-only por decisão de produto (obsidiana). Cores validadas com o
+   validador de paleta: a tríade jade/blue/orange passa --pairs all no modo
+   dark sobre a superfície #0E1011 (CVD ΔE 9.4 · visão normal ΔE 20.9 · todas
+   ≥ 3:1). Ver src/lib/viz/palette.ts para o registro completo das decisões.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── superfícies ─────────────────────────────────────────────────────── */
+  --color-plane: #08090a;
+  --color-card: #0e1011;
+  --color-raised: #141718;
+  --color-sunken: #0b0c0d;
+
+  /* ── tinta ───────────────────────────────────────────────────────────── */
+  --color-ink: #f2f4f3;
+  --color-ink-secondary: #9ba3a1;
+  --color-ink-muted: #6b7573;
+  --color-ink-faint: #454e4d;
+
+  /* ── traçado ─────────────────────────────────────────────────────────── */
+  --color-hairline: rgba(255, 255, 255, 0.07);
+  --color-hairline-strong: rgba(255, 255, 255, 0.13);
+  --color-grid: #1c2021;
+  --color-axis: #2a2f30;
+
+  /* ── estado (reservado: sempre com ícone + rótulo) ───────────────────── */
+  --color-positivo: #199e70;
+  --color-positivo-dim: #0f5f44;
+  --color-negativo: #e05a5a;
+  --color-negativo-dim: #7a2f2f;
+  --color-atencao: #d99a1f;
+
+  /* ── identidade (categórico — máx. 3 séries simultâneas) ─────────────── */
+  --color-direto: #3987e5;
+  --color-satelite: #d95926;
+
+  /* ── rampa ordinal: energia (5 passos, uma matiz, ΔL ≥ 0.06) ─────────── */
+  --color-energia-1: #146b4e;
+  --color-energia-2: #178d63;
+  --color-energia-3: #1cae7b;
+  --color-energia-4: #38c795;
+  --color-energia-5: #74dfb8;
+
+  /* ── tipografia ──────────────────────────────────────────────────────── */
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ── movimento ───────────────────────────────────────────────────────── */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══ base ═══════════════════════════════════════════════════════════════ */
+
+html {
+  color-scheme: dark;
+  background: var(--color-plane);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-plane);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-positivo) 32%, transparent);
+  color: var(--color-ink);
+}
+
+/* Scrollbar discreta — parte do acabamento, não decoração */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: content-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-positivo);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ═══ utilitários de composição ══════════════════════════════════════════ */
+
+@utility numeros-tabulares {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cartão: hairline + realce de aresta superior. O realce é o que separa
+   "card escuro" de "vidro" — luz batendo na borda, não uma cor de fundo. */
+@utility placa {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-raised) 55%, transparent) 0%,
+    var(--color-card) 42%
+  );
+  border: 1px solid var(--color-hairline);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.045) inset,
+    0 24px 48px -24px rgba(0, 0, 0, 0.9);
+}
+
+@utility placa-sutil {
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: 16px;
+}
+
+/* Granulado quase imperceptível: tira o "plástico" do preto chapado. */
+@utility grao {
+  position: relative;
+}
+@utility grao-camada {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.028;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Rótulo de seção: caixa alta, pequeno, muito espaçado. */
+@utility rotulo {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+/* ═══ animação ═══════════════════════════════════════════════════════════ */
+
+@keyframes oblix-surgir {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes oblix-tracar {
+  from {
+    stroke-dashoffset: var(--comprimento);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes oblix-revelar {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes oblix-pulsar {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.35);
+  }
+}
+
+@utility surgir {
+  animation: oblix-surgir 0.62s var(--ease-out-quint) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
