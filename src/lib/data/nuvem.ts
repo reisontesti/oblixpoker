@@ -58,9 +58,19 @@ export const definirTratadorDeFalha = (f: (erro: string) => void) => {
   aoFalhar = f;
 };
 
-const falhou = (contexto: string, erro: { message: string }) => {
+/**
+ * Avisa e RELANÇA.
+ *
+ * Relançar é o ponto: quem chama precisa saber que a escrita não aconteceu
+ * para colocá-la na fila de reenvio. Engolir o erro aqui — como era antes —
+ * fazia a interface dizer "salvo" enquanto o Postgres nunca recebia nada, que
+ * é a pior falha possível num app de registro: silenciosa e só descoberta
+ * quando o jogador troca de aparelho e os dados não estão lá.
+ */
+const falhou = (contexto: string, erro: { message: string }): never => {
   console.error(`[oblix] ${contexto}:`, erro.message);
-  aoFalhar?.(`Não consegui salvar ${contexto}. Está gravado neste aparelho e vai subir na próxima vez.`);
+  aoFalhar?.(`Não consegui salvar ${contexto} agora. Está gravado neste aparelho e sobe quando a conexão voltar.`);
+  throw new Error(`${contexto}: ${erro.message}`);
 };
 
 // ── leitura ────────────────────────────────────────────────────────────────
@@ -79,8 +89,13 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
   const sb = obterSupabase();
   if (!sb) return null;
 
-  const [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas] =
-    await Promise.all([
+  // Rede que cai faz a promessa REJEITAR, não devolver `{ error }`. Sem este
+  // try, a exceção escapava daqui e deixava quem chamou preso no estado de
+  // "sincronizando" para sempre — a tela travada que a resiliência existe para
+  // impedir.
+  let resposta;
+  try {
+    resposta = await Promise.all([
       sb.from("perfis").select("*").maybeSingle(),
       sb.from("torneios").select("*").order("data"),
       sb.from("satelites").select("*").order("data"),
@@ -91,12 +106,24 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
       sb.from("saude_tecnica").select("*").order("data"),
       sb.from("metas").select("*"),
     ]);
+  } catch (e) {
+    console.error("[oblix] leitura da nuvem:", e);
+    aoFalhar?.("Não consegui buscar os seus dados agora. Mostrando a cópia deste aparelho.");
+    return null;
+  }
+
+  const [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas] =
+    resposta;
 
   const erro = [perfis, torneios, satelites, movimentos, jogadores, notas, diario, medicoes, metas]
     .map((r) => r.error)
     .find(Boolean);
   if (erro) {
-    falhou("os seus dados", erro);
+    // Diferente das escritas: aqui não se relança. Sem resposta da nuvem, o
+    // espelho local assume e o painel continua de pé — derrubar a tela seria
+    // exatamente a experiência que a resiliência existe para evitar.
+    console.error("[oblix] leitura da nuvem:", erro.message);
+    aoFalhar?.("Não consegui buscar os seus dados agora. Mostrando a cópia deste aparelho.");
     return null;
   }
 
@@ -172,7 +199,7 @@ export async function gravarJogador(j: Jogador, usuarioId: string) {
   const sb = obterSupabase();
   if (!sb) return;
   const { error } = await sb.from("jogadores").upsert(jogadorParaLinha(j, usuarioId));
-  if (error) return falhou("o adversário", error);
+  if (error) falhou("o adversário", error);
   if (!j.notas.length) return;
   const { error: erroNotas } = await sb
     .from("notas_jogador")

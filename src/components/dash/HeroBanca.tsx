@@ -2,6 +2,8 @@
 
 import { Numero } from "@/components/ui/Numero";
 import { Delta } from "@/components/ui/Delta";
+import { useState } from "react";
+import { Banca } from "@/components/dash/Banca";
 import { Vazio } from "@/components/ui/Vazio";
 import { CurvaBankroll } from "@/components/viz/CurvaBankroll";
 import { TabelaDados } from "@/components/viz/TabelaDados";
@@ -9,6 +11,8 @@ import type { DadosPainel } from "@/lib/painel";
 import { dataMedia, moeda, moedaComSinal, variacao } from "@/lib/format";
 
 const rotuloPeriodo: Record<string, string> = {
+  "7d": "nos últimos 7 dias",
+  manual: "no período escolhido",
   "30d": "nos últimos 30 dias",
   "90d": "nos últimos 90 dias",
   "6m": "nos últimos 6 meses",
@@ -17,6 +21,7 @@ const rotuloPeriodo: Record<string, string> = {
 
 export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: string }) {
   const { bankroll, variacaoBankroll, serie, serieRecorte, geral } = dados;
+  const [ajustando, setAjustando] = useState(false);
   const pico = serie.reduce((a, p) => Math.max(a, p.saldo), 0);
   const noPico = bankroll >= pico - 0.5;
   const variacaoAbsoluta = bankroll - dados.bankrollAntes;
@@ -36,7 +41,20 @@ export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: str
       <div className="relative px-6 pt-6 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-6">
           <div>
-            <h2 className="rotulo">Banca</h2>
+            {/* O ajuste da banca mora no cartão da banca. Quem percebe que o
+                número está errado é exatamente quem acabou de olhar para ele —
+                mandar essa pessoa procurar um menu de configurações seria
+                perder a intenção no caminho. */}
+            <span className="flex items-center gap-2.5">
+              <h2 className="rotulo">Banca</h2>
+              <button
+                type="button"
+                onClick={() => setAjustando(true)}
+                className="cursor-pointer rounded-md px-1.5 py-0.5 text-[10.5px] font-medium text-ink-muted transition-colors duration-200 hover:bg-white/6 hover:text-ink"
+              >
+                aportes e saques
+              </button>
+            </span>
             {/* Figura herói: uma por tela, na mesma sans do resto, com
                 algarismos proporcionais — tabulares deixariam o número solto. */}
             <p className="mt-3">
@@ -134,6 +152,8 @@ export function HeroBanca({ dados, periodo }: { dados: DadosPainel; periodo: str
           </div>
         </>
       )}
+
+      {ajustando && <Banca aoFechar={() => setAjustando(false)} />}
     </section>
   );
 }

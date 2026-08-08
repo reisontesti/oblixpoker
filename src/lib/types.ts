@@ -31,13 +31,29 @@ export const ROTULO_ENERGIA: Record<NivelEnergia, string> = {
   muito_descansado: "Muito descansado",
 };
 
-export type PerfilJogador =
-  | "TAG"
-  | "LAG"
-  | "Nit"
-  | "Calling Station"
-  | "Maníaco"
-  | "Rock";
+/**
+ * Os arquétipos de adversário, em português de mesa.
+ *
+ * TAG, LAG, nit e calling station são jargão importado que só significa alguma
+ * coisa para quem já estudou em inglês — e o Modo Mesa é lido de relance,
+ * embaixo da mesa, muitas vezes por quem joga em clube e nunca abriu um curso.
+ * Um rótulo que precisa ser traduzido mentalmente custa o segundo que a leitura
+ * tinha para valer.
+ *
+ * Cada um destes é expressão corrente em mesa brasileira, e o significado vem
+ * junto com a palavra: pão-duro só entra com o topo, paga-tudo não solta nada,
+ * múmia não se move.
+ */
+export const PERFIS_JOGADOR = [
+  "Sólido",
+  "Solto agressivo",
+  "Maníaco",
+  "Pão-duro",
+  "Múmia",
+  "Paga-tudo",
+] as const;
+
+export type PerfilJogador = (typeof PERFIS_JOGADOR)[number];
 
 /** Um satélite disputado. Quando classifica, aponta para o torneio principal. */
 export interface Satelite {

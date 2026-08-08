@@ -32,7 +32,7 @@ import { useRegistros } from "@/lib/painel";
  * com dados que talvez fossem só teste.
  */
 export function Conta() {
-  const { usuario, comNuvem, sincronizando } = useRegistros();
+  const { usuario, comNuvem, sincronizando, pendentes, online } = useRegistros();
   const [aberto, setAberto] = useState(false);
 
   if (!comNuvem) return null;
@@ -49,14 +49,26 @@ export function Conta() {
             aria-hidden
             className="size-1.5 shrink-0 rounded-full"
             style={{
-              background: sincronizando
-                ? "var(--color-atencao)"
-                : "var(--color-positivo)",
+              background: !online
+                ? "var(--color-negativo)"
+                : sincronizando || pendentes > 0
+                  ? "var(--color-atencao)"
+                  : "var(--color-positivo)",
             }}
           />
           <span className="min-w-0 flex-1">
+            {/* Dizer a verdade sobre a rede é o que evita a pior versão do
+                problema: alguém achar que perdeu um registro quando ele só
+                não subiu ainda. Nada é perdido — está gravado no aparelho e
+                sobe sozinho quando o sinal volta. */}
             <span className="block truncate text-[11.5px] text-ink-secondary">
-              {sincronizando ? "Sincronizando…" : "Sincronizado"}
+              {!online
+                ? "Sem conexão"
+                : sincronizando
+                  ? "Sincronizando…"
+                  : pendentes > 0
+                    ? `${pendentes} ${pendentes === 1 ? "alteração" : "alterações"} para subir`
+                    : "Sincronizado"}
             </span>
             <span className="block truncate text-[10.5px] text-ink-faint">{usuario.email}</span>
           </span>
@@ -226,8 +238,8 @@ function Formulario() {
 }
 
 function Conectado({ aoFechar }: { aoFechar: () => void }) {
-  const { usuario, sincronizando } = useRegistros();
-  const [pendentes] = useState(() => contarLocaisPendentes());
+  const { usuario, sincronizando, pendentes, online } = useRegistros();
+  const [aMigrar] = useState(() => contarLocaisPendentes());
   const [estado, setEstado] = useState<"pronto" | "subindo" | "feito">("pronto");
   const [erro, setErro] = useState<string | null>(null);
 
@@ -253,16 +265,20 @@ function Conectado({ aoFechar }: { aoFechar: () => void }) {
         Sua conta
       </h2>
       <p className="mt-2.5 text-[13.5px] text-ink-secondary">{usuario?.email}</p>
-      <p className="mt-1 text-[12px] text-ink-muted">
+      <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
         {sincronizando
           ? "Buscando os seus registros…"
-          : "Os seus registros estão salvos na conta e disponíveis em qualquer aparelho."}
+          : !online
+            ? "Sem conexão agora. O Oblix continua funcionando com a cópia deste aparelho, e o que você registrar sobe assim que o sinal voltar."
+            : pendentes > 0
+              ? `${pendentes} ${pendentes === 1 ? "alteração ainda não subiu" : "alterações ainda não subiram"}. Estão gravadas aqui e vão para a conta na próxima conexão — nada se perde.`
+              : "Os seus registros estão salvos na conta e disponíveis em qualquer aparelho."}
       </p>
 
-      {pendentes > 0 && estado !== "feito" && (
+      {aMigrar > 0 && estado !== "feito" && (
         <div className="mt-6 rounded-xl border border-hairline bg-sunken p-4">
           <p className="text-[13px] font-medium text-ink">
-            {pendentes} registros ainda só neste navegador
+            {aMigrar} registros ainda só neste navegador
           </p>
           <p className="mt-1.5 text-[12px] leading-relaxed text-ink-secondary">
             São de antes de você ter conta. Subir junta tudo num lugar só; não subir deixa eles
@@ -289,7 +305,7 @@ function Conectado({ aoFechar }: { aoFechar: () => void }) {
           className="mt-6 rounded-xl border border-hairline bg-sunken px-4 py-3 text-[12.5px] leading-relaxed"
           style={{ color: "var(--color-positivo)" }}
         >
-          Pronto. Os {pendentes} registros agora estão na sua conta.
+          Pronto. Os {aMigrar} registros agora estão na sua conta.
         </p>
       )}
 

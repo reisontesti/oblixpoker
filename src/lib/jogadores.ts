@@ -14,35 +14,35 @@ export const PERFIL_META: Record<
   PerfilJogador,
   { risco: Risco; resumo: string; descricao: string }
 > = {
-  TAG: {
+  Sólido: {
     risco: "alto",
-    resumo: "Sólido",
-    descricao: "Joga poucas mãos e joga bem. Evite potes marginais fora de posição.",
+    resumo: "Joga bem",
+    descricao: "Entra em poucas mãos e joga todas bem. Evite potes marginais fora de posição.",
   },
-  LAG: {
+  "Solto agressivo": {
     risco: "alto",
-    resumo: "Agressivo",
-    descricao: "Range largo com agressão. Pague mais leve e deixe ele errar.",
+    resumo: "Pressiona sempre",
+    descricao: "Abre muita mão e aposta em todas as ruas. Pague mais leve e deixe ele errar.",
   },
   Maníaco: {
     risco: "medio",
     resumo: "Imprevisível",
-    descricao: "Constrói potes gigantes sem mão. Espere mão feita e deixe ele apostar.",
+    descricao: "Constrói potes gigantes sem mão. Espere mão feita e deixe ele apostar sozinho.",
   },
-  Nit: {
+  "Pão-duro": {
     risco: "baixo",
-    resumo: "Explorável",
-    descricao: "Foldeia demais. Roube os blinds e respeite qualquer aumento.",
+    resumo: "Só entra com o topo",
+    descricao: "Foldeia demais esperando mão grande. Roube os blinds e respeite qualquer aumento.",
   },
-  Rock: {
+  Múmia: {
     risco: "baixo",
-    resumo: "Previsível",
-    descricao: "Só entra com o topo do range. Ataque os blinds e saia quando ele acordar.",
+    resumo: "Não se move",
+    descricao: "Passivo e travado: quase nunca aumenta. Ataque os blinds e saia quando ele acordar.",
   },
-  "Calling Station": {
+  "Paga-tudo": {
     risco: "baixo",
-    resumo: "Paga demais",
-    descricao: "Paga com qualquer coisa. Aposte valor nas três ruas e nunca blefe.",
+    resumo: "Não solta nada",
+    descricao: "Paga com qualquer coisa até o river. Aposte valor nas três ruas e nunca blefe.",
   },
 };
 

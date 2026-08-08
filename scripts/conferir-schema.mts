@@ -1,7 +1,12 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
-const MIGRACAO = new URL("../supabase/migrations/20260808000000_inicial.sql", import.meta.url);
+// Todas as migrações, em ordem — o schema real é a soma delas.
+const PASTA = new URL("../supabase/migrations/", import.meta.url);
+const MIGRACOES = readdirSync(PASTA)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => new URL(f, PASTA));
 
 const db = new PGlite();
 let falhas = 0;
@@ -42,7 +47,7 @@ await db.exec(`
 `);
 
 // ── a migração de verdade ──────────────────────────────────────────────────
-await db.exec(readFileSync(MIGRACAO, "utf8"));
+for (const m of MIGRACOES) await db.exec(readFileSync(m, "utf8"));
 console.log("migração aplicada sem erro de sintaxe\n");
 
 await db.exec(`

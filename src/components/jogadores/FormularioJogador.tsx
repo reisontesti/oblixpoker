@@ -31,7 +31,7 @@ export function FormularioJogador({ jogador, aoConcluir, aoCancelar }: Props) {
   const clubes = useClubes();
   const [nome, setNome] = useState(jogador?.nome ?? "");
   const [clube, setClube] = useState(jogador?.clube ?? clubes[0] ?? "");
-  const [perfil, setPerfil] = useState<PerfilJogador>(jogador?.perfil ?? "TAG");
+  const [perfil, setPerfil] = useState<PerfilJogador>(jogador?.perfil ?? "Sólido");
   const [fortes, setFortes] = useState(paraLinhas(jogador?.pontosFortes ?? []));
   const [fracos, setFracos] = useState(paraLinhas(jogador?.pontosFracos ?? []));
   const [exploracoes, setExploracoes] = useState(paraLinhas(jogador?.exploracoes ?? []));

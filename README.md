@@ -21,7 +21,8 @@ Dark-only por decisão de produto. Interface inteira em pt-BR.
 |---|---|
 | `/` | Dashboard completo |
 | `/satelites` | Análise de satélites completa |
-| `/torneios` | Histórico com filtros; apaga só o que você registrou |
+| `/torneios` | Histórico com filtros; corrige e apaga o que você registrou |
+| `/torneios/[id]/editar` | Correção de um torneio já lançado, numa tela só |
 | `/torneios/novo` | Preparo do torneio; daqui sai a sessão ao vivo ou o lançamento retroativo |
 | `/torneios/ao-vivo` | **Sessão ao vivo** — cronômetro, intervalos e a curva do stack |
 | `/jogadores` | Banco de adversários: busca, edição e registro de campo |
@@ -311,6 +312,65 @@ sincroniza. O que sobe para o Postgres é o torneio pronto.
 O cronômetro conta a partir do instante gravado, e não somando segundos: o
 navegador congela `setInterval` em segundo plano, que é exatamente onde o Oblix
 passa a maior parte do torneio.
+
+---
+
+## Banca: aportes e saques
+
+Sem eles a curva mente nos dois números que o jogador mais olha. Um saque de
+R$ 900 que o Oblix não conhece vira prejuízo no gráfico; um aporte novo vira
+lucro. Nenhum dos dois é resultado de poker, e tratá-los como tal inventa um
+desempenho que não existiu.
+
+**A banca inicial não é um conceito à parte — é o primeiro aporte.** Por isso se
+corrige pelo mesmo caminho: quem digitou 5.000 em vez de 500 no cadastro não
+recomeça nada. O ajuste fica no próprio cartão da banca, porque quem percebe que
+o número está errado é exatamente quem acabou de olhar para ele.
+
+---
+
+## Corrigir um torneio
+
+A alternativa anterior era punitiva além da conta: um dígito errado na premiação
+custava apagar o registro e responder as quinze perguntas de novo. O erro mais
+comum que existe não pode ter o preço mais alto do produto — é assim que alguém
+decide parar de registrar.
+
+A correção é **uma tela só, sem etapas**. O assistente existe para guiar quem
+preenche pela primeira vez; quem veio corrigir já sabe o que quer mudar. A via de
+entrada continua deduzida de "jogou o satélite" + "classificou", nunca perguntada
+de novo — reabrir isso deixaria os dados se contradizerem justamente na coluna de
+que todo o comparativo depende.
+
+---
+
+## Quando a internet oscila
+
+Um jogador no clube tem sinal instável por seis horas seguidas. Duas coisas não
+podem depender da rede: **ver** os próprios dados e **registrar** um intervalo.
+
+**O espelho** resolve a primeira. Ao entrar na conta, a base do Postgres é
+copiada para o aparelho; num carregamento seguinte ela aparece na hora, e a
+nuvem substitui quando (e se) responder. Um painel vazio esperando resposta é
+pior do que dados de dois minutos atrás, porque painel vazio parece perda de
+dados. O espelho é por usuário e some ao sair — num aparelho compartilhado, o
+painel do próximo não pode ser o do anterior.
+
+**A fila** resolve a segunda. Escrita que a rede recusa vira pendência; a
+interface diz quantas são e que nada se perdeu, e elas sobem sozinhas quando o
+sinal volta. Como o espelho já guarda o estado final, o reenvio manda a base
+inteira em upsert por id, em vez de reproduzir uma sequência de chamadas que
+pode ter ficado fora de ordem.
+
+Duas falhas silenciosas foram corrigidas no caminho e valem registro: a camada
+de nuvem **engolia** o erro de escrita, então a interface dizia "salvo" enquanto
+o Postgres nunca recebia nada — a pior falha possível num app de registro,
+descoberta só ao trocar de aparelho. E uma leitura rejeitada deixava a tela presa
+em "Sincronizando…" para sempre, indistinguível de um app quebrado.
+
+**O que isto NÃO cobre:** recarregar a página inteira sem nenhuma conexão. O
+navegador não consegue nem buscar o app, e resolver isso exige um service worker
+— que o Oblix ainda não tem.
 
 ---
 

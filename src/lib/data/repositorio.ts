@@ -158,6 +158,10 @@ export interface Estado extends Omit<Registros, "jogadores" | "metas"> {
   comNuvem: boolean;
   /** Carregando a base da nuvem agora. */
   sincronizando: boolean;
+  /** Alterações que a rede recusou e ainda vão subir. */
+  pendentes: number;
+  /** O navegador acredita estar online. */
+  online: boolean;
   /** O torneio em andamento, quando existe. */
   sessao: SessaoAoVivo | null;
   /** Quantos torneios vieram do jogador, e não da base de demonstração. */
@@ -251,6 +255,12 @@ function diaLocalDe(data: Date): string {
 let conta: Conta = CONTA_INICIAL;
 let usuario: Usuario | null = null;
 let sincronizando = false;
+/** Escritas que a rede recusou e ainda precisam subir. */
+let pendentes = 0;
+let escoando = false;
+// Otimista no servidor: `navigator` não existe lá, e assumir "offline" faria o
+// HTML sair com um aviso de rede que quase nunca é verdade.
+let online = true;
 
 function montar(
   locais: Registros,
@@ -265,6 +275,8 @@ function montar(
     usuario,
     comNuvem: supabaseConfigurado,
     sincronizando,
+    pendentes,
+    online,
     pronto,
     decidiu,
     diaCorrente,
@@ -331,6 +343,7 @@ function ler(modo: ModoBase): Registros {
     const bruto = window.localStorage.getItem(chaveDe(modo));
     if (!bruto) return vazio;
     const dados = JSON.parse(bruto) as Partial<Registros>;
+    if (dados.jogadores) dados.jogadores = traduzirPerfis(dados.jogadores);
     return {
       torneios: dados.torneios ?? [],
       satelites: dados.satelites ?? [],
@@ -349,6 +362,33 @@ function ler(modo: ModoBase): Registros {
   }
 }
 
+/**
+ * Traduz os perfis de adversário gravados antes de eles virarem português.
+ *
+ * Roda na leitura, e não numa migração de uma vez: o balde da demonstração e o
+ * dos dados próprios são lidos em momentos diferentes, e um jogador pode
+ * voltar num navegador que ficou meses sem abrir. Converter no ponto de
+ * entrada é o único lugar que pega todos os casos.
+ */
+const PERFIS_ANTIGOS: Record<string, string> = {
+  TAG: "Sólido",
+  LAG: "Solto agressivo",
+  Nit: "Pão-duro",
+  Rock: "Múmia",
+  "Calling Station": "Paga-tudo",
+};
+
+function traduzirPerfis(jogadores: Record<string, Jogador>): Record<string, Jogador> {
+  let mudou = false;
+  const saida: Record<string, Jogador> = {};
+  for (const [id, j] of Object.entries(jogadores)) {
+    const novo = PERFIS_ANTIGOS[j.perfil as string];
+    if (novo) mudou = true;
+    saida[id] = novo ? { ...j, perfil: novo as Jogador["perfil"] } : j;
+  }
+  return mudou ? saida : jogadores;
+}
+
 function gravar() {
   if (typeof window === "undefined") return;
   try {
@@ -361,20 +401,121 @@ function gravar() {
 /**
  * Onde uma alteração é gravada.
  *
- * Logado e nos dados próprios, vai para o Postgres; caso contrário, para o
- * localStorage. A escrita na nuvem é disparada sem espera de propósito: a
- * memória já mudou e a tela já mostra o novo estado. Poker se anota no celular,
- * dentro do clube, com sinal ruim — travar a interface esperando um POST seria
- * o pior desenho possível, e o erro, se vier, aparece como aviso em vez de
- * perder o que a pessoa digitou.
+ * Logado e nos dados próprios, vai para o Postgres **e** para o espelho local;
+ * caso contrário, só para o localStorage. Gravar nos dois é o que faz uma
+ * oscilação de rede não custar nada: o Postgres é a verdade, o espelho é o que
+ * garante que a verdade continue na tela quando o sinal cai no meio do torneio.
+ *
+ * A escrita na nuvem é disparada sem espera de propósito — a memória já mudou e
+ * a tela já mostra o novo estado. Poker se anota no celular, dentro do clube,
+ * com sinal ruim; travar a interface esperando um POST seria o pior desenho
+ * possível. Se a chamada falhar, a alteração entra na fila e sobe depois.
  */
 function persistir(naNuvem?: () => Promise<unknown>) {
-  if (usuario && conta.modo === "proprio" && naNuvem) {
-    void naNuvem();
+  if (usuario && conta.modo === "proprio") {
+    espelhar();
+    if (naNuvem) void comFila(naNuvem);
     return;
   }
   gravar();
 }
+
+// ── resiliência a rede ─────────────────────────────────────────────────────
+//
+// Um jogador no clube tem sinal instável por seis horas seguidas. Duas coisas
+// não podem depender da rede: **ver** os próprios dados e **registrar** um
+// intervalo. O espelho resolve a primeira; a fila resolve a segunda.
+
+const chaveEspelho = (id: string) => `oblix:espelho:${id}`;
+const CHAVE_FILA = "oblix:fila:v1";
+
+/**
+ * Guarda no aparelho uma cópia do que veio da nuvem.
+ *
+ * Sem ela, abrir o app sem sinal mostra um painel vazio — o que é pior do que
+ * mostrar dados de dois minutos atrás, porque um painel vazio parece perda de
+ * dados. É por usuário: num aparelho compartilhado, o espelho de um não pode
+ * aparecer para o outro.
+ */
+function espelhar() {
+  if (typeof window === "undefined" || !usuario) return;
+  try {
+    window.localStorage.setItem(chaveEspelho(usuario.id), JSON.stringify(locais));
+  } catch {
+    /* cota estourada: a memória e o Postgres continuam corretos */
+  }
+}
+
+function lerEspelho(id: string): Registros | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const bruto = window.localStorage.getItem(chaveEspelho(id));
+    if (!bruto) return null;
+    const d = JSON.parse(bruto) as Partial<Registros>;
+    return {
+      torneios: d.torneios ?? [],
+      satelites: d.satelites ?? [],
+      movimentos: d.movimentos ?? [],
+      jogadores: traduzirPerfis(d.jogadores ?? {}),
+      mesaAtual: d.mesaAtual ?? [],
+      diario: d.diario ?? [],
+      medicoes: d.medicoes ?? [],
+      metas: d.metas ?? {},
+      sessao: d.sessao ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Executa a escrita e, se ela falhar, conta como pendente.
+ *
+ * A fila guarda o NÚMERO de pendências e não as operações: o espelho já tem o
+ * estado final, então reenviar a base inteira ao reconectar é mais simples e
+ * mais correto do que reproduzir uma sequência de chamadas que pode ter ficado
+ * fora de ordem. O contador existe para a interface poder ser honesta sobre o
+ * que ainda não subiu.
+ */
+async function comFila(op: () => Promise<unknown>) {
+  try {
+    await op();
+    // Uma escrita que passa é sinal de que a rede voltou: é o momento certo
+    // de tentar escoar o que ficou para trás, sem esperar evento de sistema.
+    if (pendentes > 0) void escoar();
+  } catch {
+    // Uma pendência por ALTERAÇÃO, não por chamada: `registrar` dispara três
+    // escritas em sequência, e contar cada uma faria o aviso na tela dizer
+    // "3 alterações" para um único torneio.
+    pendentes++;
+    gravarFila();
+    avisar();
+  }
+}
+
+function gravarFila() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CHAVE_FILA, String(pendentes));
+  } catch {
+    /* idem */
+  }
+}
+
+/** Reenvia tudo o que está em memória. Idempotente: são upserts por id. */
+async function escoar() {
+  if (escoando || !usuario || !pendentes) return;
+  escoando = true;
+  const erro = await nuvem.migrarParaNuvem(locais, usuario.id);
+  escoando = false;
+  if (!erro) {
+    pendentes = 0;
+    gravarFila();
+    avisar();
+  }
+}
+
+export const temPendencias = () => pendentes;
 
 function gravarConta() {
   if (typeof window === "undefined") return;
@@ -414,6 +555,19 @@ export function assinar(ouvinte: () => void): () => void {
     // A sessão do Supabase chega depois, sem bloquear o primeiro render: o
     // painel aparece com o que já está neste navegador e é substituído pelo da
     // conta quando ela responde.
+    pendentes = Number(window.localStorage.getItem(CHAVE_FILA) ?? 0) || 0;
+    online = navigator.onLine;
+    // Voltar a ter sinal é o momento exato de tentar de novo — esperar a
+    // próxima ação do jogador deixaria o registro parado sem motivo.
+    window.addEventListener("online", () => {
+      online = true;
+      avisar();
+      void escoar();
+    });
+    window.addEventListener("offline", () => {
+      online = false;
+      avisar();
+    });
     void recuperarSessao();
   }
   return () => ouvintes.delete(ouvinte);
@@ -506,16 +660,32 @@ async function adotarSessao(nova: Usuario) {
   gravarConta();
   avisar();
 
-  const base = await nuvem.carregarDaNuvem();
-  if (base) {
-    locais = base.registros;
-    if (base.perfil) {
-      conta = { ...conta, perfil: base.perfil };
-      gravarConta();
-    }
+  // O espelho entra primeiro: se houver cópia local, o painel aparece cheio
+  // no mesmo instante, mesmo sem rede. A nuvem substitui em seguida, quando
+  // (e se) responder.
+  const copia = lerEspelho(nova.id);
+  if (copia) {
+    locais = copia;
+    avisar();
   }
-  sincronizando = false;
-  avisar();
+
+  // `finally` porque a bandeira precisa cair mesmo se a busca explodir: uma
+  // tela parada em "Sincronizando…" é indistinguível de um app quebrado.
+  try {
+    const base = await nuvem.carregarDaNuvem();
+    if (base) {
+      locais = base.registros;
+      if (base.perfil) {
+        conta = { ...conta, perfil: base.perfil };
+        gravarConta();
+      }
+      espelhar();
+      if (pendentes > 0) void escoar();
+    }
+  } finally {
+    sincronizando = false;
+    avisar();
+  }
 }
 
 export interface ResultadoAuth {
@@ -585,7 +755,17 @@ export async function cadastrar(email: string, senha: string): Promise<Resultado
  * compartilhado, o jogador seguinte veria os números do anterior.
  */
 export async function sair() {
+  const anterior = usuario;
   await obterSupabase()?.auth.signOut();
+  // O espelho sai junto: num aparelho compartilhado, o painel do próximo não
+  // pode ser o do anterior.
+  if (anterior && typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(chaveEspelho(anterior.id));
+    } catch {
+      /* nada a fazer */
+    }
+  }
   usuario = null;
   locais = ler("proprio");
   avisar();
@@ -684,6 +864,70 @@ export function registrar(entrada: EntradaRegistro): Torneio {
   });
   avisar();
   return torneio;
+}
+
+/**
+ * Corrige um torneio já registrado, e o satélite vinculado junto.
+ *
+ * Sem isso, um dígito errado na premiação custava apagar o registro inteiro e
+ * digitar tudo de novo — punição desproporcional para o erro mais comum que
+ * existe, e o tipo de atrito que faz alguém parar de registrar.
+ *
+ * Só alcança o que o jogador criou: a base de demonstração é leitura, e deixar
+ * editá-la faria os números do onboarding divergirem entre dois navegadores.
+ */
+export function atualizarTorneio(
+  id: string,
+  torneio: Omit<Torneio, "id" | "sateliteId">,
+  satelite: Omit<Satelite, "id" | "torneioId" | "valorVaga"> | null,
+): Torneio | null {
+  const atual = locais.torneios.find((t) => t.id === id);
+  if (!atual) return null;
+
+  // O satélite vinculado é reaproveitado quando já existe, para o vínculo não
+  // se perder a cada edição — e criado se o jogador passou a informar um.
+  const vinculado = locais.satelites.find((s) => s.torneioId === id) ?? null;
+  let idSatelite: string | null = vinculado?.id ?? null;
+  let satelites = locais.satelites;
+
+  if (satelite) {
+    idSatelite ??= crypto.randomUUID();
+    const novo: Satelite = {
+      ...satelite,
+      id: idSatelite,
+      valorVaga: torneio.buyIn,
+      torneioId: satelite.classificou ? id : null,
+    };
+    satelites = vinculado
+      ? satelites.map((s) => (s.id === idSatelite ? novo : s))
+      : [...satelites, novo];
+  } else if (vinculado) {
+    satelites = satelites.filter((s) => s.id !== vinculado.id);
+    idSatelite = null;
+  }
+
+  const atualizado: Torneio = {
+    ...torneio,
+    id,
+    sateliteId: torneio.via === "satelite" ? idSatelite : null,
+  };
+
+  locais = {
+    ...locais,
+    satelites,
+    torneios: locais.torneios.map((t) => (t.id === id ? atualizado : t)),
+  };
+
+  persistir(async () => {
+    const u = usuario?.id ?? "";
+    const sat = satelites.find((s) => s.id === idSatelite);
+    if (sat) await nuvem.gravar("satelites", { ...sateliteParaLinha(sat, u), torneio_id: null }, "o satélite");
+    await nuvem.gravar("torneios", torneioParaLinha(atualizado, u), "o torneio");
+    if (sat?.torneioId) await nuvem.gravar("satelites", sateliteParaLinha(sat, u), "o vínculo do satélite");
+    if (!satelite && vinculado) await nuvem.apagar("satelites", "id", vinculado.id, "o satélite");
+  });
+  avisar();
+  return atualizado;
 }
 
 export function remover(idTorneio: string) {
@@ -817,6 +1061,44 @@ export function fecharSessao(id: string, fechamento: FechamentoSessao) {
 export function removerCheckIn(id: string) {
   locais = { ...locais, diario: locais.diario.filter((d) => d.id !== id) };
   persistir(() => nuvem.apagar("diario", "id", id, "o check-in"));
+  avisar();
+}
+
+// ── movimentações de banca ─────────────────────────────────────────────────
+//
+// Aporte e saque não são detalhe contábil: sem eles a curva mente. Um saque de
+// R$ 900 que o Oblix não conhece vira "prejuízo" no gráfico, e um aporte novo
+// vira "lucro" — os dois números que o jogador mais olha, ambos errados. A
+// banca inicial é apenas o primeiro aporte, e por isso se edita pelo mesmo
+// caminho: quem digitou 5.000 em vez de 500 no cadastro conserta aqui.
+
+export type EntradaMovimento = Omit<MovimentoBankroll, "id">;
+
+export function registrarMovimento(entrada: EntradaMovimento): MovimentoBankroll {
+  const movimento: MovimentoBankroll = { ...entrada, id: crypto.randomUUID() };
+  locais = { ...locais, movimentos: [...locais.movimentos, movimento] };
+  persistir(() =>
+    nuvem.gravar("movimentos", movimentoParaLinha(movimento, usuario?.id ?? ""), "a movimentação"),
+  );
+  avisar();
+  return movimento;
+}
+
+export function atualizarMovimento(id: string, entrada: EntradaMovimento) {
+  const atualizado: MovimentoBankroll = { ...entrada, id };
+  locais = {
+    ...locais,
+    movimentos: locais.movimentos.map((m) => (m.id === id ? atualizado : m)),
+  };
+  persistir(() =>
+    nuvem.gravar("movimentos", movimentoParaLinha(atualizado, usuario?.id ?? ""), "a movimentação"),
+  );
+  avisar();
+}
+
+export function removerMovimento(id: string) {
+  locais = { ...locais, movimentos: locais.movimentos.filter((m) => m.id !== id) };
+  persistir(() => nuvem.apagar("movimentos", "id", id, "a movimentação"));
   avisar();
 }
 

@@ -21,6 +21,7 @@ import {
   serieBankroll,
   variacaoPct,
   type PeriodoChave,
+  type PeriodoManual,
 } from "@/lib/calc/metricas";
 import {
   compararVias,
@@ -122,8 +123,12 @@ function avaliarSaude(medicoes: MedicaoTecnica[]): LinhaSaude[] {
   });
 }
 
-export function usePainel(periodo: PeriodoChave) {
+export function usePainel(periodo: PeriodoChave, manual?: PeriodoManual) {
   const registros = useRegistros();
+  // Desmembrado para o memo comparar os valores, e não a identidade do objeto:
+  // um literal recriado a cada render invalidaria o cálculo inteiro sempre.
+  const de = manual?.de;
+  const ate = manual?.ate;
 
   return useMemo(() => {
     const { torneios: TORNEIOS, satelites: SATELITES, movimentos: MOVIMENTOS } = registros;
@@ -137,7 +142,7 @@ export function usePainel(periodo: PeriodoChave) {
     // Base vazia é o estado normal de quem acabou de começar, não um caso de
     // erro: sem nenhum evento, a janela "tudo" começa hoje mesmo e o saldo é
     // zero. Ler `SERIE[0]` direto quebraria o painel no primeiro segundo de uso.
-    const jan = janela(periodo, HOJE, SERIE[0]?.t ?? HOJE.getTime());
+    const jan = janela(periodo, HOJE, SERIE[0]?.t ?? HOJE.getTime(), de && ate ? { de, ate } : undefined);
     const atual = recortar(TORNEIOS, SATELITES, IDX, jan.inicio, jan.fim);
     const anterior = recortar(TORNEIOS, SATELITES, IDX, jan.inicioAnterior, jan.inicio);
 
@@ -296,7 +301,7 @@ export function usePainel(periodo: PeriodoChave) {
       mesasFinaisAno,
       titulosAno,
     };
-  }, [periodo, registros]);
+  }, [periodo, de, ate, registros]);
 }
 
 export type DadosPainel = ReturnType<typeof usePainel>;

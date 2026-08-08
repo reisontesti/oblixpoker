@@ -8,13 +8,15 @@ import { Insights } from "@/components/dash/Insights";
 import { Metas } from "@/components/dash/Metas";
 import { SaudeTecnica } from "@/components/dash/SaudeTecnica";
 import { UltimosTorneios } from "@/components/dash/UltimosTorneios";
-import { Segmentado } from "@/components/ui/Segmentado";
-import { ehItm, ehMesaFinal, PERIODOS, type PeriodoChave } from "@/lib/calc/metricas";
+import { SeletorPeriodo } from "@/components/dash/SeletorPeriodo";
+import { ehItm, ehMesaFinal, type PeriodoChave, type PeriodoManual } from "@/lib/calc/metricas";
 import { usarDemonstracao } from "@/lib/data/repositorio";
 import { decimal, percentual, pontos } from "@/lib/format";
 import { usePainel } from "@/lib/painel";
 
 const BASE_PERIODO: Record<PeriodoChave, string> = {
+  "7d": "vs. 7 dias anteriores",
+  manual: "vs. período anterior de mesmo tamanho",
   "30d": "vs. 30 dias anteriores",
   "90d": "vs. 90 dias anteriores",
   "6m": "vs. semestre anterior",
@@ -34,7 +36,8 @@ function porMesSimples<T>(itens: { data: string }[], calcular: (grupo: T[]) => n
 
 export default function Painel() {
   const [periodo, setPeriodo] = useState<PeriodoChave>("90d");
-  const dados = usePainel(periodo);
+  const [manual, setManual] = useState<PeriodoManual | null>(null);
+  const dados = usePainel(periodo, manual ?? undefined);
   const { atual, anterior, geral, torneios } = dados;
 
   const faiscas = useMemo(() => {
@@ -67,7 +70,10 @@ export default function Painel() {
     <main className="mx-auto w-full max-w-[86rem] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
       {/* Uma linha de filtro acima de tudo o que ela recorta — nunca um
           seletor por cartão, que faria os gráficos discordarem entre si. */}
-      <header className="surgir flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+      {/* `relative z-40` porque os cartões abaixo animam com `transform`, e
+          transform cria contexto de empilhamento: sem isso eles pintam por
+          cima do pop-up de datas, que fica visível mas não clicável. */}
+      <header className="surgir relative z-40 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
         <div>
           <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
             {primeiraVez
@@ -99,11 +105,14 @@ export default function Painel() {
           </p>
         </div>
 
-        <Segmentado
-          rotuloAcessivel="Período de análise"
+        <SeletorPeriodo
           valor={periodo}
-          aoMudar={setPeriodo}
-          opcoes={PERIODOS.map((p) => ({ valor: p.chave, rotulo: p.rotulo }))}
+          manual={manual}
+          hoje={dados.hoje.toISOString().slice(0, 10)}
+          aoMudar={(chave, intervalo) => {
+            setPeriodo(chave);
+            setManual(intervalo);
+          }}
         />
       </header>
 

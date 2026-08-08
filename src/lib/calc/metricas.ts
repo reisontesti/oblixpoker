@@ -4,14 +4,21 @@ import { NIVEIS_ENERGIA } from "@/lib/types";
 /** Posição a partir da qual não é mais mesa final num MTT de 9 lugares. */
 export const LUGARES_MESA_FINAL = 9;
 
-export type PeriodoChave = "30d" | "90d" | "6m" | "tudo";
+export type PeriodoChave = "7d" | "30d" | "90d" | "6m" | "tudo" | "manual";
 
 export const PERIODOS: { chave: PeriodoChave; rotulo: string; dias: number | null }[] = [
+  { chave: "7d", rotulo: "7 dias", dias: 7 },
   { chave: "30d", rotulo: "30 dias", dias: 30 },
   { chave: "90d", rotulo: "90 dias", dias: 90 },
   { chave: "6m", rotulo: "6 meses", dias: 182 },
   { chave: "tudo", rotulo: "Tudo", dias: null },
 ];
+
+/** Intervalo escolhido a dedo, em `AAAA-MM-DD`. */
+export interface PeriodoManual {
+  de: string;
+  ate: string;
+}
 
 export interface Janela {
   inicio: number;
@@ -21,9 +28,37 @@ export interface Janela {
   dias: number | null;
 }
 
-export function janela(chave: PeriodoChave, referencia: Date, primeiroRegistro: number): Janela {
+/**
+ * O recorte de tempo que o painel inteiro obedece.
+ *
+ * A janela anterior tem sempre o MESMO tamanho da atual, inclusive no intervalo
+ * manual: comparar sete dias contra os trinta anteriores produziria um "delta"
+ * que só mede a diferença de duração. É essa simetria que torna a seta ao lado
+ * de cada número honesta.
+ */
+export function janela(
+  chave: PeriodoChave,
+  referencia: Date,
+  primeiroRegistro: number,
+  manual?: PeriodoManual,
+): Janela {
   const fim = referencia.getTime();
-  const def = PERIODOS.find((p) => p.chave === chave)!;
+
+  if (chave === "manual" && manual) {
+    // O dia final entra inteiro: quem escolhe "até 8 de agosto" espera que o
+    // torneio jogado na noite do dia 8 conte.
+    const inicio = new Date(`${manual.de}T00:00:00`).getTime();
+    const fimDia = new Date(`${manual.ate}T23:59:59.999`).getTime();
+    const span = Math.max(86_400_000, fimDia - inicio);
+    return {
+      inicio,
+      fim: fimDia,
+      inicioAnterior: inicio - span,
+      dias: Math.round(span / 86_400_000),
+    };
+  }
+
+  const def = PERIODOS.find((p) => p.chave === chave) ?? PERIODOS[2];
   if (def.dias === null) {
     const span = fim - primeiroRegistro;
     return { inicio: primeiroRegistro, fim, inicioAnterior: primeiroRegistro - span, dias: null };

@@ -11,7 +11,7 @@
  * Roda sem Docker e sem projeto na nuvem: PGlite é Postgres de verdade em WASM.
  */
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   diarioParaLinha,
   jogadorParaLinha,
@@ -40,7 +40,14 @@ import type {
   Torneio,
 } from "@/lib/types";
 
-const MIGRACAO = new URL("../supabase/migrations/20260808000000_inicial.sql", import.meta.url);
+// Todas as migrações, em ordem — o schema real é a soma delas. Testar só a
+// primeira deixaria de fora exatamente as mudanças recentes, que são as que
+// ainda não foram exercitadas por ninguém.
+const PASTA = new URL("../supabase/migrations/", import.meta.url);
+const MIGRACOES = readdirSync(PASTA)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => new URL(f, PASTA));
 const USUARIO = "11111111-1111-1111-1111-111111111111";
 
 const db = new PGlite();
@@ -71,7 +78,7 @@ await db.exec(`
   create function auth.uid() returns uuid language sql stable as
     $$ select uid from auth._sessao limit 1 $$;
 `);
-await db.exec(readFileSync(MIGRACAO, "utf8"));
+for (const m of MIGRACOES) await db.exec(readFileSync(m, "utf8"));
 await db.exec(`insert into auth.users values ('${USUARIO}');`);
 
 /** Insere a linha mapeada e devolve o que o Postgres guardou de fato. */
@@ -174,7 +181,7 @@ const jogador: Jogador = {
   id: "dddddddd-0000-4000-8000-000000000001",
   nome: "Marcos do 7",
   clube: "Nexus Poker",
-  perfil: "Calling Station",
+  perfil: "Paga-tudo",
   pontosFortes: ["Paciente na bolha", "Lê bem o showdown"],
   pontosFracos: ["Paga demais no river"],
   exploracoes: ["Value bet fino sempre", "Nunca blefar"],

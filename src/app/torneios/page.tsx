@@ -178,17 +178,28 @@ export default function Torneios() {
                       >
                         {moedaComSinal(saldo)}
                       </td>
-                      <td className="px-3 py-2.5 text-right">
-                        {/* Só o que o jogador registrou pode ser apagado — a
-                            base de demonstração é leitura. */}
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                        {/* Só o que o jogador registrou pode ser editado ou
+                            apagado — a base de demonstração é leitura.
+                            "Editar" vem antes de "Apagar" porque é o que
+                            resolve o caso comum: um dígito errado. Antes disso,
+                            corrigir custava apagar tudo e digitar de novo. */}
                         {proprio && (
-                          <button
-                            type="button"
-                            onClick={() => remover(t.id)}
-                            className="cursor-pointer text-[11.5px] text-ink-faint opacity-0 transition-all duration-200 group-hover:opacity-100 hover:text-[var(--color-negativo)] focus-visible:opacity-100"
-                          >
-                            Apagar
-                          </button>
+                          <span className="flex justify-end gap-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                            <Link
+                              href={`/torneios/${t.id}/editar`}
+                              className="text-[11.5px] text-ink-muted transition-colors duration-200 hover:text-ink"
+                            >
+                              Editar
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => remover(t.id)}
+                              className="cursor-pointer text-[11.5px] text-ink-faint transition-colors duration-200 hover:text-[var(--color-negativo)]"
+                            >
+                              Apagar
+                            </button>
+                          </span>
                         )}
                       </td>
                     </tr>
