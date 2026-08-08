@@ -1,25 +1,19 @@
 -- ===========================================================================
 -- Perfis de adversario: chave ASCII no banco, rotulo na interface
 --
--- ESTE ARQUIVO E' 100% ASCII, DE PROPOSITO. Sem acentos, sem travessoes, sem
--- caixa de comentario desenhada. A migracao anterior falhou duas vezes porque
--- os acentos se corrompiam entre o arquivo e o editor de SQL -- o arquivo
--- estava integro em UTF-8/NFC, mas alguma etapa do caminho mudava os bytes, e
--- o CHECK passava a recusar exatamente os valores que deveria aceitar.
--- Texto que nao tem acento nao tem como ser corrompido.
+-- ESTE ARQUIVO E' 100% ASCII, DE PROPOSITO -- sem acentos nem em comentario.
+-- Tentativas anteriores falharam e o arquivo estava integro em UTF-8/NFC, o
+-- que aponta para corrupcao entre o arquivo e o editor de SQL. Texto sem
+-- acento nao tem como ser corrompido.
 --
--- A traducao nao compara com literais acentuados. Ela remove tudo que nao for
--- ASCII e compara o esqueleto que sobra, o que funciona em NFC, em NFD e ate
--- em texto ja corrompido:
+-- A traducao nao compara com literais acentuados: remove tudo que nao e' ASCII
+-- e compara o esqueleto que sobra, o que vale em NFC, em NFD e em texto ja
+-- corrompido. 'Solido' vira 'Slido' em NFC e 'Solido' em NFD, entao cada
+-- perfil lista as duas formas. O underscore fica preservado para a migracao
+-- ser idempotente.
 --
---   'Solido'  em NFC -> 'Slido'      (o acento e' um caractere so)
---   'Solido'  em NFD -> 'Solido'     (o acento e' marca combinante separada)
---   'Pao-duro' NFC   -> 'Po-duro'
---   'Pao-duro' NFD   -> 'Pao-duro'
---
--- Por isso cada perfil lista as duas formas. O underscore fica na lista de
--- caracteres preservados para a migracao ser idempotente: rodar de novo sobre
--- 'pao_duro' devolve 'pao_duro'.
+-- Termina com um SELECT: sem ele, o editor responde "Success" mesmo quando o
+-- resultado nao e' o esperado, e nao ha como distinguir aplicado de ignorado.
 -- ===========================================================================
 
 alter table public.jogadores drop constraint if exists jogadores_perfil_check;
@@ -45,13 +39,13 @@ update public.jogadores set perfil = case
   when 'paga-tudo'       then 'paga_tudo'
   when 'paga_tudo'       then 'paga_tudo'
   when 'calling station' then 'paga_tudo'
-  -- Valor irreconhecivel vira o perfil neutro em vez de travar a migracao:
-  -- perder a leitura de um adversario e' ruim, travar o banco de todos e' pior.
+  -- Valor irreconhecivel vira o perfil neutro em vez de travar a migracao.
   else 'solido'
 end;
 
-alter table public.jogadores
-  alter column perfil set default 'solido',
-  add constraint jogadores_perfil_check check (
-    perfil in ('solido', 'solto_agressivo', 'maniaco', 'pao_duro', 'mumia', 'paga_tudo')
-  );
+alter table public.jogadores alter column perfil set default 'solido';
+alter table public.jogadores add constraint jogadores_perfil_check
+  check (perfil in ('solido','solto_agressivo','maniaco','pao_duro','mumia','paga_tudo'));
+
+select pg_get_constraintdef(oid) as restricao_ativa
+  from pg_constraint where conname = 'jogadores_perfil_check';
