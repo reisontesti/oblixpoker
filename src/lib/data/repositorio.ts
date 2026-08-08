@@ -504,11 +504,27 @@ export interface ResultadoAuth {
   confirmar?: boolean;
 }
 
+/**
+ * Mensagens do Supabase em português.
+ *
+ * As de configuração ("signups are disabled") entram junto com as de uso
+ * porque são as que mais confundem: descrevem um estado do projeto, não um
+ * erro de quem está digitando, e em inglês fazem a pessoa achar que errou a
+ * senha. Dizer de quem é o problema é metade da mensagem.
+ */
 const TRADUZIR: Record<string, string> = {
   "Invalid login credentials": "E-mail ou senha incorretos.",
   "User already registered": "Já existe uma conta com este e-mail. Tente entrar.",
   "Password should be at least 6 characters": "A senha precisa ter ao menos 6 caracteres.",
   "Email not confirmed": "Confirme o e-mail que enviamos antes de entrar.",
+  "Email signups are disabled":
+    "O cadastro por e-mail está desligado neste projeto. Quem administra precisa ativar o provedor de e-mail no Supabase.",
+  "Signups not allowed for this instance":
+    "Este projeto não está aceitando cadastros novos no momento.",
+  "Email logins are disabled":
+    "O login por e-mail está desligado neste projeto. Quem administra precisa ativar o provedor de e-mail no Supabase.",
+  "For security purposes, you can only request this after 60 seconds":
+    "Aguarde um minuto antes de tentar de novo.",
 };
 
 const traduzir = (m: string) => TRADUZIR[m] ?? m;

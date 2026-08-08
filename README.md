@@ -388,6 +388,24 @@ cp .env.example .env.local   # preencha com a URL e a chave anon
 Depois aplique `supabase/migrations/20260808000000_inicial.sql` no SQL Editor do
 Supabase.
 
+**Só a chave `anon` entra no `.env.local`.** A `service_role` ignora RLS, e toda
+variável `NEXT_PUBLIC_*` é embutida no bundle do navegador — publicá-la daria a
+qualquer visitante acesso total aos dados de todos os usuários. Se ela for
+exposta por engano, rotacione em *Settings → API*.
+
+Em *Authentication → Sign In / Providers → Email*, três estados param o cadastro
+e são fáceis de confundir entre si, porque o sintoma é parecido:
+
+| Estado | O que o servidor responde |
+|---|---|
+| Provedor de e-mail desligado | `email_provider_disabled` |
+| Confirmação ligada | Cadastro sem sessão — cai na tela "confirme o seu e-mail" |
+| Confirmação ligada, cota estourada | `429 email rate limit exceeded` |
+
+O SMTP embutido de projeto gratuito manda pouquíssimos e-mails por hora. Para
+testar sem depender disso, crie o usuário à mão em *Authentication → Users* com
+**Auto Confirm User** marcado: nenhum e-mail é enviado.
+
 **Sem essas variáveis o Oblix funciona igual**, em `localStorage`, e nada de
 conta aparece na interface. Não é hedge: é o que permite clonar o repositório e
 ver a demonstração rodando em trinta segundos, sem criar projeto na nuvem antes.
