@@ -44,16 +44,36 @@ export const ROTULO_ENERGIA: Record<NivelEnergia, string> = {
  * junto com a palavra: pão-duro só entra com o topo, paga-tudo não solta nada,
  * múmia não se move.
  */
+/**
+ * A CHAVE é ASCII; o rótulo em português mora em `ROTULO_PERFIL`.
+ *
+ * A separação não é preciosismo. Guardar "Pão-duro" como valor de coluna põe um
+ * acento dentro de uma restrição `CHECK`, e daí ele passa a viajar por área de
+ * transferência, editor de SQL e normalização Unicode até um dos saltos
+ * corromper o byte — a restrição então recusa exatamente o valor que deveria
+ * aceitar, e só os perfis sem acento continuam funcionando. Aconteceu aqui, em
+ * produção. `NivelEnergia` já seguia esta convenção; foi ela que este código
+ * tinha quebrado.
+ */
 export const PERFIS_JOGADOR = [
-  "Sólido",
-  "Solto agressivo",
-  "Maníaco",
-  "Pão-duro",
-  "Múmia",
-  "Paga-tudo",
+  "solido",
+  "solto_agressivo",
+  "maniaco",
+  "pao_duro",
+  "mumia",
+  "paga_tudo",
 ] as const;
 
 export type PerfilJogador = (typeof PERFIS_JOGADOR)[number];
+
+export const ROTULO_PERFIL: Record<PerfilJogador, string> = {
+  solido: "Sólido",
+  solto_agressivo: "Solto agressivo",
+  maniaco: "Maníaco",
+  pao_duro: "Pão-duro",
+  mumia: "Múmia",
+  paga_tudo: "Paga-tudo",
+};
 
 /** Um satélite disputado. Quando classifica, aponta para o torneio principal. */
 export interface Satelite {

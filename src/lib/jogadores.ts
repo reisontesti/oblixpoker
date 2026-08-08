@@ -14,32 +14,32 @@ export const PERFIL_META: Record<
   PerfilJogador,
   { risco: Risco; resumo: string; descricao: string }
 > = {
-  Sólido: {
+  solido: {
     risco: "alto",
     resumo: "Joga bem",
     descricao: "Entra em poucas mãos e joga todas bem. Evite potes marginais fora de posição.",
   },
-  "Solto agressivo": {
+  solto_agressivo: {
     risco: "alto",
     resumo: "Pressiona sempre",
     descricao: "Abre muita mão e aposta em todas as ruas. Pague mais leve e deixe ele errar.",
   },
-  Maníaco: {
+  maniaco: {
     risco: "medio",
     resumo: "Imprevisível",
     descricao: "Constrói potes gigantes sem mão. Espere mão feita e deixe ele apostar sozinho.",
   },
-  "Pão-duro": {
+  pao_duro: {
     risco: "baixo",
     resumo: "Só entra com o topo",
     descricao: "Foldeia demais esperando mão grande. Roube os blinds e respeite qualquer aumento.",
   },
-  Múmia: {
+  mumia: {
     risco: "baixo",
     resumo: "Não se move",
     descricao: "Passivo e travado: quase nunca aumenta. Ataque os blinds e saia quando ele acordar.",
   },
-  "Paga-tudo": {
+  paga_tudo: {
     risco: "baixo",
     resumo: "Não solta nada",
     descricao: "Paga com qualquer coisa até o river. Aposte valor nas três ruas e nunca blefe.",

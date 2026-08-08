@@ -1,5 +1,5 @@
 import { COR_RISCO, PERFIL_META } from "@/lib/jogadores";
-import type { PerfilJogador } from "@/lib/types";
+import { ROTULO_PERFIL, type PerfilJogador } from "@/lib/types";
 
 /**
  * O nome do perfil sempre aparece — a cor apenas reforça se é ameaça ou
@@ -27,7 +27,7 @@ export function SeloPerfil({
         className="size-1.5 rounded-full"
         style={{ background: cor }}
       />
-      {perfil}
+      {ROTULO_PERFIL[perfil]}
     </span>
   );
 }

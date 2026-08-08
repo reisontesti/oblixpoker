@@ -181,7 +181,7 @@ const jogador: Jogador = {
   id: "dddddddd-0000-4000-8000-000000000001",
   nome: "Marcos do 7",
   clube: "Nexus Poker",
-  perfil: "Paga-tudo",
+  perfil: "paga_tudo",
   pontosFortes: ["Paciente na bolha", "Lê bem o showdown"],
   pontosFracos: ["Paga demais no river"],
   exploracoes: ["Value bet fino sempre", "Nunca blefar"],

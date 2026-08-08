@@ -371,21 +371,44 @@ function ler(modo: ModoBase): Registros {
  * entrada é o único lugar que pega todos os casos.
  */
 const PERFIS_ANTIGOS: Record<string, string> = {
-  TAG: "Sólido",
-  LAG: "Solto agressivo",
-  Nit: "Pão-duro",
-  Rock: "Múmia",
-  "Calling Station": "Paga-tudo",
+  // As siglas importadas da primeira versão.
+  tag: "solido",
+  lag: "solto_agressivo",
+  nit: "pao_duro",
+  rock: "mumia",
+  "calling station": "paga_tudo",
+  // E os rótulos acentuados que chegaram a ser gravados como valor. Comparar
+  // sem acento e sem caixa é obrigatório aqui: o mesmo texto pode ter sido
+  // salvo em NFC ou em NFD, e as duas formas não são iguais por `===`.
+  solido: "solido",
+  "solto agressivo": "solto_agressivo",
+  maniaco: "maniaco",
+  "pao-duro": "pao_duro",
+  mumia: "mumia",
+  "paga-tudo": "paga_tudo",
 };
+
+const semAcento = (t: string) =>
+  t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/**
+ * Ligado quando a leitura precisou traduzir algo. Existe para a migração se
+ * fixar no disco em vez de ser refeita a cada abertura: o resultado seria o
+ * mesmo, mas o dado guardado ficaria velho para sempre — e um dia sobe para o
+ * Postgres, onde o `CHECK` só conhece o formato novo.
+ */
+let migrouPerfis = false;
 
 function traduzirPerfis(jogadores: Record<string, Jogador>): Record<string, Jogador> {
   let mudou = false;
   const saida: Record<string, Jogador> = {};
   for (const [id, j] of Object.entries(jogadores)) {
-    const novo = PERFIS_ANTIGOS[j.perfil as string];
-    if (novo) mudou = true;
-    saida[id] = novo ? { ...j, perfil: novo as Jogador["perfil"] } : j;
+    const chave = j.perfil as string;
+    const novo = PERFIS_ANTIGOS[semAcento(chave)];
+    if (novo && novo !== chave) mudou = true;
+    saida[id] = novo && novo !== chave ? { ...j, perfil: novo as Jogador["perfil"] } : j;
   }
+  if (mudou) migrouPerfis = true;
   return mudou ? saida : jogadores;
 }
 
@@ -548,6 +571,7 @@ export function assinar(ouvinte: () => void): () => void {
     conta = lida.conta;
     decidiu = lida.decidiu;
     locais = ler(conta.modo);
+    if (migrouPerfis) gravar();
     diaCorrente = diaLocalDe(new Date());
     // Sempre avisa, mesmo sem registros locais: o dia corrente sozinho já é
     // uma diferença em relação ao instantâneo do servidor.

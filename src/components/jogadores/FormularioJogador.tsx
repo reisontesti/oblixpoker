@@ -10,7 +10,7 @@ import {
 import { novoIdJogador, salvarJogador } from "@/lib/data/repositorio";
 import { PERFIS } from "@/lib/jogadores";
 import { useClubes } from "@/lib/painel";
-import type { Jogador, PerfilJogador } from "@/lib/types";
+import { ROTULO_PERFIL, type Jogador, type PerfilJogador } from "@/lib/types";
 
 /** Uma linha por item: editar lista em campo de texto é mais rápido do que
  *  gerenciar botões de adicionar e remover, e é assim que se anota de verdade. */
@@ -31,7 +31,7 @@ export function FormularioJogador({ jogador, aoConcluir, aoCancelar }: Props) {
   const clubes = useClubes();
   const [nome, setNome] = useState(jogador?.nome ?? "");
   const [clube, setClube] = useState(jogador?.clube ?? clubes[0] ?? "");
-  const [perfil, setPerfil] = useState<PerfilJogador>(jogador?.perfil ?? "Sólido");
+  const [perfil, setPerfil] = useState<PerfilJogador>(jogador?.perfil ?? "solido");
   const [fortes, setFortes] = useState(paraLinhas(jogador?.pontosFortes ?? []));
   const [fracos, setFracos] = useState(paraLinhas(jogador?.pontosFracos ?? []));
   const [exploracoes, setExploracoes] = useState(paraLinhas(jogador?.exploracoes ?? []));
@@ -97,7 +97,7 @@ export function FormularioJogador({ jogador, aoConcluir, aoCancelar }: Props) {
           dica="Define como o Modo Mesa agrupa e o que sugere contra ele"
           valor={perfil}
           aoMudar={setPerfil}
-          opcoes={PERFIS.map((p) => ({ valor: p, rotulo: p }))}
+          opcoes={PERFIS.map((p) => ({ valor: p, rotulo: ROTULO_PERFIL[p] }))}
         />
 
         <CampoTextoLongo

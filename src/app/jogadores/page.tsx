@@ -10,7 +10,7 @@ import { alternarNaMesa, ehRegistroProprio, removerJogador } from "@/lib/data/re
 import { haQuantoTempo, moedaComSinal } from "@/lib/format";
 import { frescor, PERFIL_META, ROTULO_NOTA } from "@/lib/jogadores";
 import { useRegistros } from "@/lib/painel";
-import type { Jogador } from "@/lib/types";
+import { ROTULO_PERFIL, type Jogador } from "@/lib/types";
 
 type Ordem = "nome" | "confrontos" | "revisao";
 
@@ -178,7 +178,8 @@ export default function Jogadores() {
 
   const lista = registros.jogadores
     .filter((j) => {
-      const alvo = `${j.nome} ${j.clube} ${j.perfil}`.toLowerCase();
+      // Busca pelo RÓTULO, não pela chave: ninguém digita "pao_duro".
+      const alvo = `${j.nome} ${j.clube} ${ROTULO_PERFIL[j.perfil]}`.toLowerCase();
       return alvo.includes(busca.trim().toLowerCase());
     })
     .sort((a, b) => {
