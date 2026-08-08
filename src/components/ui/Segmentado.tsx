@@ -44,10 +44,23 @@ export function Segmentado<T extends string>({
   const [marca, setMarca] = useState<{ left: number; width: number } | null>(null);
 
   const medir = useCallback(() => {
-    const ativo = caixa.current?.querySelector<HTMLElement>('[aria-checked="true"]');
-    if (!ativo) return;
+    const fila = caixa.current;
+    const ativo = fila?.querySelector<HTMLElement>('[aria-checked="true"]');
+    if (!fila || !ativo) return;
     setMarca({ left: ativo.offsetLeft, width: ativo.offsetWidth });
-    ativo.scrollIntoView({ block: "nearest", inline: "nearest" });
+
+    // Rola a PRÓPRIA fila, e só quando a opção ativa está mesmo fora da vista.
+    //
+    // `scrollIntoView` fazia duas coisas indesejadas mesmo com a opção já
+    // visível: podia rolar os ancestrais junto e movia o ponto de partida da
+    // navegação por Tab do Chrome para cá — com isso, o primeiro Tab no painel
+    // caía no meio do seletor de período em vez de no atalho "pular para o
+    // conteúdo", que é o primeiro elemento da página.
+    const inicio = ativo.offsetLeft;
+    const fim = inicio + ativo.offsetWidth;
+    if (inicio < fila.scrollLeft || fim > fila.scrollLeft + fila.clientWidth) {
+      fila.scrollTo({ left: Math.max(0, inicio - 8), behavior: "smooth" });
+    }
   }, []);
 
   useEffect(() => {

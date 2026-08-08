@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 import { gerarBRCode } from "@/lib/pix";
 import { moeda } from "@/lib/format";
 
@@ -33,13 +32,28 @@ export function Pix({ valor }: { valor: number }) {
     if (!codigo) return;
     // Gerado no cliente para não pesar o bundle com uma imagem por valor
     // possível — o código muda a cada quantia escolhida.
-    QRCode.toDataURL(codigo, {
-      margin: 1,
-      width: 320,
-      color: { dark: "#0e1011", light: "#f2f4f3" },
-    })
-      .then(setQr)
-      .catch(() => setQr(null));
+    //
+    // O `import()` é dinâmico porque a biblioteca de QR pesa ~50 kB e só serve
+    // aqui: no fim de um torneio, depois de o jogador marcar premiação e
+    // escolher apoiar. Estática, ela ia no primeiro carregamento de todo mundo
+    // — inclusive de quem nunca vai chegar a esta tela.
+    let cancelado = false;
+    void import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(codigo, {
+          margin: 1,
+          width: 320,
+          // Módulos escuros sobre fundo claro nos DOIS temas: leitor de QR
+          // espera esse contraste, e invertê-lo no tema escuro quebraria a
+          // leitura em boa parte dos aparelhos.
+          color: { dark: "#0e1011", light: "#f2f4f3" },
+        }),
+      )
+      .then((url) => !cancelado && setQr(url))
+      .catch(() => !cancelado && setQr(null));
+    return () => {
+      cancelado = true;
+    };
   }, [codigo]);
 
   useEffect(() => {

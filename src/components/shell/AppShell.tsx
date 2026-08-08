@@ -291,6 +291,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
+      {/* No desktop a lateral tem sete destinos mais conta e configurações;
+          sem este atalho, quem navega por teclado passa por todos eles em
+          CADA página antes de chegar ao conteúdo. Fica invisível até receber
+          foco, que é quando ele importa. */}
+      <a
+        href="#conteudo"
+        className="sr-only z-[70] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:inline-flex focus:min-h-[var(--toque)] focus:items-center focus:rounded-xl focus:border focus:border-hairline focus:bg-raised focus:px-4 focus:text-[14px] focus:font-medium focus:text-ink"
+      >
+        Pular para o conteúdo
+      </a>
+
       {/* Instalado no iPhone, o conteúdo sobe até o topo da tela. Os glifos da
           barra de status são brancos (`black-translucent`), então esta faixa é
           escura nos DOIS temas — no claro ela lê como moldura do aparelho. */}
@@ -345,7 +356,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="min-w-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <div
+        id="conteudo"
+        tabIndex={-1}
+        className="min-w-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] outline-none lg:pb-0"
+      >
         {/* Sem depender de `decidiu`: a base é a de demonstração desde o
             primeiro byte de HTML, e é aí que a faixa precisa estar. Amarrá-la
             à decisão criaria um salto de layout logo depois da hidratação. */}
