@@ -30,14 +30,16 @@ import {
   torneioParaLinha,
   type Linha,
 } from "@/lib/data/mapa";
-import type {
-  DiarioMental,
-  Jogador,
-  MedicaoTecnica,
-  MetaDefinida,
-  MovimentoBankroll,
-  Satelite,
-  Torneio,
+import {
+  normalizarObjetivo,
+  OBJETIVOS,
+  type DiarioMental,
+  type Jogador,
+  type MedicaoTecnica,
+  type MetaDefinida,
+  type MovimentoBankroll,
+  type Satelite,
+  type Torneio,
 } from "@/lib/types";
 
 // Todas as migrações, em ordem — o schema real é a soma delas. Testar só a
@@ -268,6 +270,45 @@ const lido = linhaParaTorneio(
 );
 conferir("dinheiro volta como número, não string", "number", typeof lido.premiacao);
 conferir("soma de dinheiro é soma, não concatenação", 450.5, lido.buyIn + lido.rebuys);
+
+// ── objetivo: a chave que a coluna aceita ──────────────────────────────────
+//
+// A restrição de `perfis.objetivo` chegou a guardar 'Evolu√ß√£o' em produção e
+// recusava justamente o valor que o cadastro oferece selecionado. A coluna
+// hoje só aceita chave ASCII, e `normalizarObjetivo` é a ponte para tudo que
+// já foi gravado antes disso — no localStorage de quem usa o Oblix e nas
+// linhas de quem tinha conta.
+//
+// Os três primeiros casos são os estados reais em que o valor pode chegar: o
+// certo de hoje, o acentuado de ontem e o corrompido que causou o defeito.
+for (const [bruto, esperado] of [
+  ["evolucao", "evolucao"],
+  ["Evolução", "evolucao"],
+  ["Evolu\u221a\u00df\u221a\u00a3o", "evolucao"],
+  ["Recreativo", "recreativo"],
+  ["Competitivo", "competitivo"],
+  ["Profissional", "profissional"],
+  ["", "evolucao"],
+  [null, "evolucao"],
+  ["qualquer coisa", "evolucao"],
+] as const) {
+  conferir(`objetivo ${JSON.stringify(bruto)}`, esperado, normalizarObjetivo(bruto));
+}
+
+// Toda chave normalizada precisa ser aceita pela coluna — é a única afirmação
+// que importa, e ela é feita contra o Postgres, não contra uma lista repetida.
+await db.exec(`insert into auth.users values ('${USUARIO}') on conflict do nothing;`);
+for (const chave of OBJETIVOS) {
+  try {
+    await db.exec(`
+      insert into public.perfis (id, nome, nick, objetivo, modalidade)
+      values ('${USUARIO}', 'x', 'x', '${chave}', 'MTT')
+      on conflict (id) do update set objetivo = excluded.objetivo;`);
+    conferir(`a coluna aceita '${chave}'`, true, true);
+  } catch (e) {
+    conferir(`a coluna aceita '${chave}'`, true, `recusado: ${(e as Error).message.slice(0, 60)}`);
+  }
+}
 
 console.log(falhas === 0 ? "\nMapeamento fiel nos dois sentidos.\n" : `\n${falhas} falha(s).\n`);
 process.exit(falhas === 0 ? 0 : 1);

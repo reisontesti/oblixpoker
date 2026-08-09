@@ -544,7 +544,7 @@ function gravarFila() {
 async function escoar() {
   if (escoando || !usuario || !pendentes) return;
   escoando = true;
-  const erro = await nuvem.migrarParaNuvem(locais, usuario.id);
+  const erro = await nuvem.migrarParaNuvem(locais, usuario.id, conta.perfil);
   escoando = false;
   if (!erro) {
     pendentes = 0;
@@ -684,7 +684,11 @@ export function atualizarPerfil(perfil: Perfil) {
   if (conta.modo !== "proprio") return;
   conta = { ...conta, perfil };
   gravarConta();
-  if (usuario) void nuvem.salvarPerfil(perfil, usuario.id);
+  // Pela FILA, como todo o resto. Antes ia direto: se a rede falhasse, o erro
+  // virava uma rejeição sem dono, a alteração não entrava na contagem de
+  // pendências e nunca era reenviada. Trocar o nome sem sinal significava
+  // perder a troca — e a interface dizia "sincronizado" logo em seguida.
+  if (usuario) void comFila(() => nuvem.salvarPerfil(perfil, usuario!.id));
   avisar();
 }
 
@@ -723,6 +727,13 @@ async function adotarSessao(nova: Usuario) {
       if (base.perfil) {
         conta = { ...conta, perfil: base.perfil };
         gravarConta();
+      } else if (conta.perfil) {
+        // Conta nova, perfil já preenchido aqui. A ordem natural de uso é
+        // essa: a pessoa se apresenta ao Oblix, usa por um tempo e só então
+        // cria conta. Sem esta subida, o perfil ficava só no navegador e a
+        // conta nascia sem nome — o painel de outro aparelho cumprimentaria
+        // "Jogador".
+        void comFila(() => nuvem.salvarPerfil(conta.perfil!, nova.id));
       }
       espelhar();
       if (pendentes > 0) void escoar();
@@ -840,7 +851,7 @@ export async function migrarLocaisParaNuvem(): Promise<string | null> {
     return "Não há nada neste navegador para subir.";
   }
 
-  const erro = await nuvem.migrarParaNuvem(guardados, usuario.id);
+  const erro = await nuvem.migrarParaNuvem(guardados, usuario.id, conta.perfil);
   if (erro) return erro;
 
   const base = await nuvem.carregarDaNuvem();

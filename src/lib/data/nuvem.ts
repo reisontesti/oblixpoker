@@ -222,7 +222,19 @@ export async function gravarJogador(j: Jogador, usuarioId: string) {
  * são UUIDs válidos e preservá-los mantém intactos os vínculos que já existem
  * entre torneio, satélite e diário.
  */
-export async function migrarParaNuvem(r: Registros, usuarioId: string): Promise<string | null> {
+export async function migrarParaNuvem(
+  r: Registros,
+  usuarioId: string,
+  /**
+   * O perfil vai junto, e não por conveniência.
+   *
+   * `escoar` reenvia tudo o que está em memória quando a rede volta. Sem o
+   * perfil nessa lista, uma troca de nome feita sem sinal ficava para sempre
+   * só no aparelho — o contador de pendências zerava, a interface dizia
+   * "sincronizado", e o nome antigo continuava na conta.
+   */
+  perfil?: Perfil | null,
+): Promise<string | null> {
   const sb = obterSupabase();
   if (!sb) return "Sem projeto configurado.";
 
@@ -284,6 +296,10 @@ export async function migrarParaNuvem(r: Registros, usuarioId: string): Promise<
           .upsert(r.treino.map((t) => respostaTreinoParaLinha(t, usuarioId))),
     ],
   ];
+
+  if (perfil) {
+    passos.unshift(["o seu perfil", () => sb.from("perfis").upsert(perfilParaLinha(perfil, usuarioId))]);
+  }
 
   for (const [nome, executar] of passos) {
     const { error } = await executar();
