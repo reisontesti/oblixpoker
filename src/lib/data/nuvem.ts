@@ -157,6 +157,11 @@ export async function carregarDaNuvem(): Promise<BaseDaNuvem | null> {
     mesaAtual: [],
     sessao: null,
     treino: ((treino.data ?? []) as Linha[]).map(linhaParaRespostaTreino),
+    // As observações importadas ainda não sobem: são o único dado do Oblix
+    // que vive só no aparelho, e é uma decisão consciente. Uma tabela de
+    // contadores por adversário exige schema, RLS e migração próprios — e o
+    // valor de tê-los na conta só aparece para quem joga em dois aparelhos.
+    observacoes: [],
     diario: ((diario.data ?? []) as Linha[]).map(linhaParaDiario),
     medicoes: ((medicoes.data ?? []) as Linha[]).map(linhaParaMedicao),
     metas: Object.fromEntries(

@@ -11,6 +11,7 @@ import {
   TORNEIOS,
 } from "@/lib/data/seed";
 import { CHAVES_META, normalizarObjetivo } from "@/lib/types";
+import type { Observacao, Plano } from "@/lib/integracoes/importar";
 import type { Resposta as RespostaTreino } from "@/lib/treino/tipos";
 import { obterSupabase, supabaseConfigurado } from "@/lib/supabase/cliente";
 import * as nuvem from "@/lib/data/nuvem";
@@ -106,6 +107,15 @@ export interface Registros {
    * resposta, o número não diz o que estudar.
    */
   treino: RespostaTreino[];
+  /**
+   * Contadores vindos de arquivo de sala, por jogador e por torneio.
+   *
+   * As MÃOS não ficam guardadas — ver `integracoes/importar.ts`. Cem torneios
+   * de mãos cruas passariam de 30 MB; os contadores que respondem às mesmas
+   * perguntas cabem em algumas centenas de linhas, somam entre si e carregam a
+   * amostra junto.
+   */
+  observacoes: Observacao[];
 }
 
 /**
@@ -174,6 +184,8 @@ export interface Estado extends Omit<Registros, "jogadores" | "metas"> {
   sessao: SessaoAoVivo | null;
   /** Todas as decisões de treino respondidas. */
   treino: RespostaTreino[];
+  /** Contadores importados de sala, crus — a leitura os recorta e soma. */
+  observacoes: Observacao[];
   /** Quantos torneios vieram do jogador, e não da base de demonstração. */
   proprios: number;
   /**
@@ -197,6 +209,7 @@ const vazio: Registros = {
   metas: {},
   sessao: null,
   treino: [],
+  observacoes: [],
 };
 
 const CONTA_INICIAL: Conta = { modo: "demonstracao", perfil: null };
@@ -305,6 +318,7 @@ function montar(
     metas: resolverMetas(locais.metas, anoDe(conta.modo)),
     sessao: locais.sessao,
     treino: locais.treino,
+    observacoes: locais.observacoes,
     proprios: locais.torneios.length,
   };
 }
@@ -364,6 +378,7 @@ function ler(modo: ModoBase): Registros {
       jogadores: dados.jogadores ?? {},
       mesaAtual: dados.mesaAtual ?? [],
       diario: dados.diario ?? [],
+      observacoes: dados.observacoes ?? [],
       medicoes: dados.medicoes ?? [],
       metas: dados.metas ?? {},
       sessao: dados.sessao ?? null,
@@ -500,6 +515,7 @@ function lerEspelho(id: string): Registros | null {
       metas: d.metas ?? {},
       sessao: d.sessao ?? null,
       treino: d.treino ?? [],
+      observacoes: d.observacoes ?? [],
     };
   } catch {
     return null;
@@ -1043,6 +1059,117 @@ export function salvarJogador(jogador: Jogador) {
   };
   persistir(() => nuvem.gravarJogador(jogador, usuario?.id ?? ""));
   avisar();
+}
+
+/**
+ * Grava um plano de importação.
+ *
+ * Três coisas acontecem juntas, e é por isso que a função é uma só: nasce o
+ * torneio, nascem os contadores dele e os adversários entram no banco. Fazer
+ * em três chamadas deixaria a porta aberta para um torneio importado sem
+ * estatística, ou para adversários órfãos de torneio.
+ *
+ * O ADVERSÁRIO NASCE SEM PERFIL. `solido`, `maniaco`, `pao_duro` são LEITURA —
+ * juízo de quem jogou contra. Derivar isso de VPIP e apresentar como se o
+ * jogador tivesse anotado apagaria a fronteira entre o que a máquina mediu e o
+ * que a pessoa concluiu, que é justamente o que o banco de jogadores existe
+ * para manter separado. O número aparece do lado; a classificação continua
+ * sendo dela.
+ */
+export function importar(plano: Plano, escolhidos: string[]) {
+  const agora = new Date().toISOString();
+  const novasObs: Observacao[] = [];
+  const novosTorneios: Torneio[] = [];
+  const jogadores = { ...locais.jogadores };
+  const porNome = new Map(
+    fundirJogadores(baseDe(conta.modo).jogadores, locais.jogadores).map((j) => [
+      j.nome.toLowerCase(),
+      j,
+    ]),
+  );
+
+  for (const alvo of plano.torneios) {
+    if (!escolhidos.includes(alvo.digital)) continue;
+
+    const idTorneio = crypto.randomUUID();
+    novosTorneios.push({ ...alvo.torneio, id: idTorneio, sateliteId: null });
+
+    novasObs.push({
+      id: crypto.randomUUID(),
+      sala: plano.sala,
+      adversario: null,
+      torneioId: idTorneio,
+      data: alvo.torneio.data,
+      contadores: alvo.heroi,
+      digitalDoTorneio: alvo.digital,
+    });
+
+    for (const adv of alvo.adversarios) {
+      novasObs.push({
+        id: crypto.randomUUID(),
+        sala: plano.sala,
+        adversario: adv.nome,
+        torneioId: idTorneio,
+        data: alvo.torneio.data,
+        contadores: adv.contadores,
+      });
+
+      const existente = porNome.get(adv.nome.toLowerCase());
+      if (existente) {
+        // Confronto a mais, e a leitura continua sendo a que a pessoa
+        // escreveu: nada do que ela anotou é sobrescrito por importação.
+        const atualizado = { ...existente, confrontos: existente.confrontos + 1 };
+        jogadores[existente.id] = atualizado;
+        porNome.set(adv.nome.toLowerCase(), atualizado);
+        continue;
+      }
+
+      const novo: Jogador = {
+        id: crypto.randomUUID(),
+        nome: adv.nome,
+        clube: alvo.torneio.clube,
+        // Sem perfil atribuído: ver a nota acima. O padrão é o neutro do
+        // domínio, e a tela mostra que ninguém classificou ainda.
+        perfil: "solido",
+        pontosFortes: [],
+        pontosFracos: [],
+        exploracoes: [],
+        tells: [],
+        confrontos: 1,
+        saldoConfrontos: 0,
+        atualizadoEm: agora,
+        notas: [],
+      };
+      jogadores[novo.id] = novo;
+      porNome.set(adv.nome.toLowerCase(), novo);
+    }
+  }
+
+  locais = {
+    ...locais,
+    torneios: ordenarPorData([...locais.torneios, ...novosTorneios]),
+    observacoes: [...locais.observacoes, ...novasObs],
+    jogadores,
+  };
+
+  persistir(async () => {
+    const u = usuario?.id ?? "";
+    for (const t of novosTorneios) {
+      await nuvem.gravar("torneios", torneioParaLinha(t, u), "o torneio importado");
+    }
+  });
+  avisar();
+
+  return { torneios: novosTorneios.length, observacoes: novasObs.length };
+}
+
+/** As digitais do que já foi importado — a trava contra importar duas vezes. */
+export function digitaisImportadas(): Set<string> {
+  const saida = new Set<string>();
+  for (const o of locais.observacoes) {
+    if (o.digitalDoTorneio) saida.add(o.digitalDoTorneio);
+  }
+  return saida;
 }
 
 /**

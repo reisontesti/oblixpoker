@@ -472,6 +472,18 @@ html[data-tema-pronto] .placa-sutil {
   }
 }
 
+/* Fita de logos: anda metade da largura e volta ao início. Como a lista é
+   renderizada duas vezes, -50% cai exatamente sobre a cópia e o laço não tem
+   costura visível. */
+@keyframes oblix-fita {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes oblix-subir {
   from {
     transform: translateY(100%);

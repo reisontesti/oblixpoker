@@ -4,6 +4,7 @@ import { Cabecalho } from "@/components/site/Cabecalho";
 import { CartaoRecurso, Destaque, GLIFOS, Secao, Titulo } from "@/components/site/Blocos";
 import { Rodape } from "@/components/site/Rodape";
 import { NumeroQueConta, Revelar } from "@/components/site/Revelar";
+import { Salas } from "@/components/site/Salas";
 import { Vitrine } from "@/components/site/Vitrine";
 import { moeda, percentual } from "@/lib/format";
 import { BANCA, CONTRASTE_ENERGIA, HORAS, RESUMO, SATS } from "@/lib/site/vitrine";
@@ -110,6 +111,12 @@ const RECURSOS = [
       "Quanto a vaga saiu mais barata, quanto o cansaço custou na mesa e qual das duas forças venceu.",
     glifo: GLIFOS.satelite,
   },
+  {
+    titulo: "Importação",
+    corpo:
+      "Arraste o histórico que a sala te dá e ele vira torneio, estatística e leitura de adversário. O arquivo é lido no seu navegador.",
+    glifo: GLIFOS.importar,
+  },
 ];
 
 // ── seção 13 ───────────────────────────────────────────────────────────────
@@ -187,6 +194,9 @@ export default function PaginaInicial() {
             </Revelar>
           </div>
         </section>
+
+        {/* ═══ salas compatíveis ═══════════════════════════════════════════ */}
+        <Salas />
 
         {/* ═══ o problema ══════════════════════════════════════════════════ */}
         <Secao>

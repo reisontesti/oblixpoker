@@ -164,6 +164,12 @@ export const GLIFOS = {
       <ellipse {...traco} cx="10" cy="10" rx="8" ry="3.6" transform="rotate(-28 10 10)" />
     </Glifo>
   ),
+  importar: (
+    <Glifo>
+      <path {...traco} d="M10 2.5v9m0 0 3-3m-3 3-3-3" />
+      <path {...traco} d="M3 12.5v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+    </Glifo>
+  ),
   diario: (
     <Glifo>
       <path {...traco} d="M5 3.5h9a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 14 17.5H5V3.5Z" />

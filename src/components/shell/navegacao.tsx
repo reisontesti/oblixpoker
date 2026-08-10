@@ -127,6 +127,20 @@ export const DIARIO: ItemNav = {
   ),
 };
 
+export const PLATAFORMAS: ItemNav = {
+  href: "/plataformas",
+  rotulo: "Plataformas",
+  resumo: "Importe o seu histórico das salas",
+  icone: (
+    <Icone>
+      {/* Duas superfícies ligadas: o arquivo de lá entrando aqui. */}
+      <rect {...traco} x="2.5" y="4" width="7" height="12" rx="1.6" />
+      <rect {...traco} x="12.5" y="7" width="5" height="9" rx="1.4" />
+      <path {...traco} d="M9.5 10h3" />
+    </Icone>
+  ),
+};
+
 export const PERFIL: ItemNav = {
   href: "/perfil",
   rotulo: "Perfil",
@@ -158,7 +172,7 @@ export const CONFIGURACOES: ItemNav = {
 export const PRINCIPAIS: ItemNav[] = [PAINEL, TORNEIOS, TREINO, JOGADORES];
 
 /** O que o "Mais" abre no celular. */
-export const SECUNDARIOS: ItemNav[] = [MESA, SATELITES, DIARIO];
+export const SECUNDARIOS: ItemNav[] = [MESA, SATELITES, DIARIO, PLATAFORMAS];
 
 /** A lateral do desktop mostra tudo — lá cabe. */
 export const NAVEGACAO: ItemNav[] = [
@@ -169,4 +183,5 @@ export const NAVEGACAO: ItemNav[] = [
   MESA,
   SATELITES,
   DIARIO,
+  PLATAFORMAS,
 ];
