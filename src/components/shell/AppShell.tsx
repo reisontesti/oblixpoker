@@ -17,6 +17,7 @@ import {
 } from "@/components/shell/navegacao";
 import { Avatar } from "@/components/ui/Avatar";
 import { Avisos, AvisosDaNuvem } from "@/components/ui/Aviso";
+import { Girando } from "@/components/ui/Botao";
 import { Folha } from "@/components/ui/Folha";
 import { usarModo } from "@/lib/data/repositorio";
 import { ROTULO_OBJETIVO } from "@/lib/types";
@@ -244,6 +245,30 @@ function FaixaDemonstracao({ aoSair }: { aoSair: () => void }) {
   );
 }
 
+/**
+ * Enquanto a base vem da nuvem.
+ *
+ * Não é um esqueleto, e isso é uma escolha. O Oblix já tem o que mostrar: o
+ * espelho local entra antes da rede e o painel aparece cheio no mesmo
+ * instante. Cobrir dados verdadeiros com retângulos cinza seria esconder
+ * informação para simular trabalho.
+ *
+ * O que falta é dizer que aqueles números podem estar alguns minutos
+ * atrasados — e é só isso que esta faixa diz. Some sozinha quando a nuvem
+ * responde, e `role="status"` a anuncia sem interromper a leitura.
+ */
+function FaixaSincronizando() {
+  return (
+    <div
+      role="status"
+      className="esmaecer flex items-center gap-2 border-b border-hairline bg-raised/40 px-4 py-1.5 text-[12.5px] text-ink-secondary backdrop-blur-xl sm:px-7 lg:px-10"
+    >
+      <Girando tamanho={12} />
+      Buscando os seus registros — o que está na tela é a cópia deste aparelho.
+    </div>
+  );
+}
+
 function FaixaSessao({ nome }: { nome: string }) {
   return (
     <Link
@@ -267,7 +292,8 @@ function FaixaSessao({ nome }: { nome: string }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { perfil, modo, pronto, decidiu, temPerfilProprio, sessao } = useRegistros();
+  const { perfil, modo, pronto, decidiu, temPerfilProprio, sessao, sincronizando } =
+    useRegistros();
   const [reaberto, setReaberto] = useState<Etapa | null>(null);
   const [mais, setMais] = useState(false);
   const caminho = usePathname();
@@ -366,6 +392,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             primeiro byte de HTML, e é aí que a faixa precisa estar. Amarrá-la
             à decisão criaria um salto de layout logo depois da hidratação. */}
         {modo === "demonstracao" && <FaixaDemonstracao aoSair={irParaMeusDados} />}
+        {sincronizando && <FaixaSincronizando />}
         {/* Um torneio em andamento precisa ser reencontrável de qualquer tela:
             o jogador abre o app no intervalo, seis horas depois de começar, e
             não deve ter que lembrar por onde entrou. */}

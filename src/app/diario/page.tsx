@@ -136,10 +136,23 @@ export default function Diario() {
         <h1 className="texto-display text-ink">
           Diário mental
         </h1>
+        {/* Sem nenhum registro, "0% das noites bem dormidas" e "tilt em 0%
+            das sessões" são duas afirmações sobre uma amostra que não existe —
+            e as duas soam como diagnóstico. O painel já resolve isso do mesmo
+            jeito no cumprimento de quem acabou de chegar. */}
         <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-ink-secondary">
-          {resumo.registros} registros · {percentual(resumo.taxaSonoBom)} das noites bem
-          dormidas · tilt em {percentual(resumo.taxaTilt)} das sessões fechadas. O estado
-          com que você senta é a única variável que você controla antes da primeira carta.
+          {resumo.registros === 0 ? (
+            <>
+              O estado com que você senta é a única variável que você controla antes da
+              primeira carta. O check-in de hoje leva quinze segundos.
+            </>
+          ) : (
+            <>
+              {resumo.registros} registros · {percentual(resumo.taxaSonoBom)} das noites bem
+              dormidas · tilt em {percentual(resumo.taxaTilt)} das sessões fechadas. O estado
+              com que você senta é a única variável que você controla antes da primeira carta.
+            </>
+          )}
         </p>
       </header>
 

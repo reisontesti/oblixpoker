@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CartaoMesa } from "@/components/jogadores/CartaoMesa";
+import { Placa } from "@/components/ui/Placa";
+import { Vazio } from "@/components/ui/Vazio";
 import { SeloPerfil } from "@/components/jogadores/SeloPerfil";
 import { alternarNaMesa, definirMesa } from "@/lib/data/repositorio";
 import { PERFIL_META, type Risco } from "@/lib/jogadores";
@@ -104,11 +106,18 @@ function Seletor({
             </div>
           ))}
 
+          {/* Duas ausências diferentes. Quem digitou um nome e não achou
+              precisa saber que basta apagar a busca; quem nunca anotou
+              ninguém precisa saber para que serve isto aqui. Antes as duas
+              recebiam "Nenhum adversário encontrado", que só descreve o
+              próprio branco. */}
           {porClube.length === 0 && (
             <p className="py-6 text-center text-[13px] text-ink-muted">
-              Nenhum adversário encontrado.{" "}
+              {busca.trim()
+                ? "Nenhum adversário com esse nome."
+                : "O seu banco de adversários está vazio."}{" "}
               <Link href="/jogadores" className="text-ink underline underline-offset-2">
-                Cadastrar no banco
+                {busca.trim() ? "Ver o banco" : "Anotar o primeiro"}
               </Link>
             </p>
           )}
@@ -176,6 +185,22 @@ export default function Mesa() {
         )}
       </header>
 
+      {/* Sem nenhum adversário anotado, o Modo Mesa não tem o que montar: a
+          tela ficava 80% vazia embaixo de uma caixa de busca que não busca
+          nada. Aqui ela explica o que ganha quem anota e aponta o caminho. */}
+      {registros.jogadores.length === 0 ? (
+        <div className="mt-6">
+          <Placa>
+            <Vazio
+              className="py-14 sm:py-16"
+              titulo="Monte a mesa depois de anotar os primeiros adversários"
+              corpo="O Modo Mesa lê o seu banco e agrupa quem está sentado por risco: de quem cobrar, de quem fugir e de onde sai o seu lucro. Ele precisa das suas leituras para isso — e uma leitura anotada vale mais que uma lembrada."
+              acao={{ rotulo: "Anotar o primeiro adversário", href: "/jogadores" }}
+            />
+          </Placa>
+        </div>
+      ) : (
+        <>
       {mostrarSeletor && (
         <div className="surgir mt-6">
           <Seletor
@@ -203,6 +228,8 @@ export default function Mesa() {
             </section>
           ))}
         </div>
+      )}
+        </>
       )}
     </main>
   );

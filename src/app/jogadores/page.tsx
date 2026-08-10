@@ -224,7 +224,13 @@ export default function Jogadores() {
         </div>
       )}
 
-      <div className="surgir mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Buscar e ordenar uma lista vazia não é uma tarefa. Some enquanto não
+          houver ninguém anotado, e volta no primeiro registro. */}
+      <div
+        className={`surgir mt-6 flex-col gap-3 sm:flex-row sm:items-center ${
+          registros.jogadores.length === 0 ? "hidden" : "flex"
+        }`}
+      >
         <input
           type="search"
           value={busca}
