@@ -260,7 +260,7 @@ export function Conclusao({ torneio, investimento, aoRegistrarOutro }: Props) {
 
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
         <Link
-          href="/"
+          href="/painel"
           className="rounded-xl border border-hairline px-5 py-2.5 text-center text-[13.5px] font-medium text-ink transition-colors duration-200 hover:border-hairline-strong hover:bg-realce"
         >
           Ver no painel

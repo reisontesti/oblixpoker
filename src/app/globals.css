@@ -159,6 +159,73 @@
   --mistura-grao: multiply;
 }
 
+/**
+ * Obsidiana local: um trecho da página que é escuro mesmo no tema claro.
+ *
+ * Serve às "telas" da página de apresentação — o herói e a vitrine do painel.
+ * Ali o escuro não é preferência de quem visita, é o produto sendo mostrado,
+ * como um aparelho numa foto. O resto da página segue o tema normalmente.
+ *
+ * Sim, os valores estão repetidos do `@theme`. É a única forma em CSS de
+ * reabrir o escuro dentro de um documento claro, e a divergência entre as
+ * duas listas é impedida por teste: `conferir-contraste.mts` compara as duas
+ * e reprova se alguma cor sair do lugar.
+ */
+.obsidiana {
+  color-scheme: dark;
+
+  --color-plane: #08090a;
+  --color-card: #0e1011;
+  --color-raised: #141718;
+  --color-sunken: #0b0c0d;
+
+  --color-ink: #f2f4f3;
+  --color-ink-secondary: #9ba3a1;
+  --color-ink-muted: #757f7d;
+  --color-ink-faint: #454e4d;
+
+  --color-hairline: rgba(255, 255, 255, 0.07);
+  --color-hairline-strong: rgba(255, 255, 255, 0.13);
+  --color-grid: #1c2021;
+  --color-axis: #2a2f30;
+
+  --color-realce-tenue: rgba(255, 255, 255, 0.025);
+  --color-realce: rgba(255, 255, 255, 0.05);
+  --color-realce-forte: rgba(255, 255, 255, 0.09);
+  --color-trilho: rgba(255, 255, 255, 0.08);
+  --color-marca: rgba(255, 255, 255, 0.22);
+
+  --color-positivo: #199e70;
+  --color-positivo-dim: #0f5f44;
+  --color-negativo: #e05a5a;
+  --color-negativo-dim: #7a2f2f;
+  --color-atencao: #d99a1f;
+
+  --color-direto: #3987e5;
+  --color-satelite: #d95926;
+
+  --color-energia-1: #177659;
+  --color-energia-2: #178d63;
+  --color-energia-3: #1cae7b;
+  --color-energia-4: #38c795;
+  --color-energia-5: #74dfb8;
+
+  --sombra-placa:
+    0 1px 0 0 rgba(255, 255, 255, 0.045) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.9);
+  --sombra-flutuante: 0 24px 64px -16px rgba(0, 0, 0, 0.75);
+  --gradiente-placa: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-raised) 55%, transparent) 0%,
+    var(--color-card) 42%
+  );
+  --veu: rgba(8, 9, 10, 0.78);
+  --opacidade-grao: 0.028;
+  --mistura-grao: overlay;
+
+  background: var(--color-plane);
+  color: var(--color-ink);
+}
+
 /* ═══ base ═══════════════════════════════════════════════════════════════ */
 
 html {
@@ -341,6 +408,23 @@ html[data-tema-pronto] .placa-sutil {
     scroll-snap-align: start;
     flex-shrink: 0;
   }
+}
+
+/* Entrada por rolagem, na apresentação.
+   O estado escondido só vale quando há JavaScript para revelar de volta — sem
+   ele, `com-js` não existe na raiz e o conteúdo nasce visível. Sem esta trava,
+   quem desabilita scripts (e qualquer leitor que não execute os nossos) veria
+   uma página de duas mil pixels em branco. */
+@utility a-revelar {
+  html.com-js & {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+@utility revelado {
+  opacity: 1;
+  transform: none;
 }
 
 /* ═══ animação ═══════════════════════════════════════════════════════════ */

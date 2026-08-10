@@ -25,7 +25,7 @@ import { useRegistros } from "@/lib/painel";
 
 /** O item ativo inclui as subpáginas: `/torneios/novo` acende "Torneios". */
 function estaAtivo(caminho: string, href: string) {
-  return href === "/" ? caminho === "/" : caminho === href || caminho.startsWith(`${href}/`);
+  return caminho === href || caminho.startsWith(`${href}/`);
 }
 
 function ItensLaterais() {
@@ -340,7 +340,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Coluna de navegação — some no celular, onde a barra inferior assume */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-hairline bg-plane/70 px-4 py-6 backdrop-blur-xl lg:flex">
-        <Link href="/" className="mb-9 px-2">
+        <Link href="/painel" className="mb-9 px-2">
           <Logotipo />
         </Link>
 

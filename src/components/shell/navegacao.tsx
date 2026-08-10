@@ -40,7 +40,7 @@ const Icone = ({ children }: { children: ReactNode }) => (
 );
 
 export const PAINEL: ItemNav = {
-  href: "/",
+  href: "/painel",
   rotulo: "Painel",
   resumo: "Banca, ROI e o que fazer agora",
   icone: (

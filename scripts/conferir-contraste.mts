@@ -91,6 +91,11 @@ function contraste(a: RGB, b: RGB): number {
 
 let falhas = 0;
 
+function ok(rotulo: string, cond: boolean, detalhe = "") {
+  console.log(`${cond ? "ok   " : "FALHA"}  ${rotulo.padEnd(52)} ${detalhe}`);
+  if (!cond) falhas++;
+}
+
 function checa(rotulo: string, valor: number, minimo: number) {
   const ok = valor >= minimo;
   console.log(
@@ -167,6 +172,28 @@ for (const [tema, P] of [
     1.15,
   );
 }
+
+// ── a obsidiana local não pode divergir do tema escuro ─────────────────────
+//
+// `.obsidiana` reabre o escuro dentro de uma página clara, para as "telas" da
+// apresentação. Isso obriga a repetir a paleta — é a única forma em CSS —, e é
+// exatamente o tipo de duplicação que envelhece mal: alguém ajusta um tom no
+// `@theme` e o herói da landing continua com o antigo, sem nada acusar.
+console.log("\n── obsidiana local ───────────────────────────────────────────");
+const OBSIDIANA = variaveis(bloco(".obsidiana"));
+const divergentes = Object.entries(ESCURO)
+  .filter(([nome]) => nome in OBSIDIANA)
+  .filter(([nome, valor]) => OBSIDIANA[nome] !== valor)
+  .map(([nome]) => nome);
+const ausentes = Object.keys(ESCURO).filter((n) => !(n in OBSIDIANA));
+
+ok(
+  "obsidiana repete o escuro sem divergir",
+  divergentes.length === 0 && ausentes.length === 0,
+  divergentes.length || ausentes.length
+    ? `divergem: ${divergentes.join(", ") || "—"} · faltam: ${ausentes.join(", ") || "—"}`
+    : `${Object.keys(ESCURO).length} cores idênticas`,
+);
 
 // ── a direção da rampa ─────────────────────────────────────────────────────
 //

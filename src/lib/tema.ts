@@ -45,14 +45,21 @@ export const DESCRICAO_PREFERENCIA: Record<Preferencia, string> = {
  * `try/catch` porque `localStorage` lança em navegação privada de algumas
  * versões do Safari, e um app que não abre por causa da cor é pior do que um
  * app que abre na cor errada.
+ *
+ * Ele também marca `com-js` na raiz. É o que permite à apresentação esconder
+ * blocos que só aparecem ao rolar SEM esconder nada de quem está sem
+ * JavaScript: a classe só existe quando há JavaScript para revelá-los de
+ * volta. Marcar aqui, e não num efeito, é o que evita o piscar.
  */
 export const SCRIPT_TEMA = `(function(){try{
 var p=localStorage.getItem(${JSON.stringify(CHAVE_TEMA)})||"sistema";
 var e=p==="sistema"?(matchMedia("(prefers-color-scheme: light)").matches?"claro":"escuro"):p;
 document.documentElement.dataset.tema=e;
+document.documentElement.classList.add("com-js");
 var m=document.querySelector('meta[name="theme-color"]');
 if(m)m.setAttribute("content",e==="claro"?"#f4f6f5":"#08090a");
-}catch(_){document.documentElement.dataset.tema="escuro";}})();`;
+}catch(_){document.documentElement.dataset.tema="escuro";
+document.documentElement.classList.add("com-js");}})();`;
 
 // ── estado observável ──────────────────────────────────────────────────────
 

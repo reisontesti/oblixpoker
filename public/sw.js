@@ -21,7 +21,7 @@
  *    outro entrar, e o app já sabe lidar com a falha — tem espelho e fila.
  */
 
-const VERSAO = "oblix-v1";
+const VERSAO = "oblix-v2";
 const CACHE = `${VERSAO}`;
 
 /**
@@ -30,7 +30,7 @@ const CACHE = `${VERSAO}`;
  * um torneio antigo não é o que alguém faz dentro do clube.
  */
 const ESSENCIAIS = [
-  "/",
+  "/painel",
   "/torneios",
   "/torneios/novo",
   "/torneios/ao-vivo",
@@ -99,9 +99,11 @@ async function navegar(req) {
     return resposta;
   } catch {
     const cache = await caches.open(CACHE);
-    // A própria rota, se estiver guardada; senão a raiz, que é um app
-    // completo e sabe se orientar sozinho a partir da URL.
-    return (await cache.match(req)) ?? (await cache.match("/")) ?? Response.error();
+    // A própria rota, se estiver guardada; senão o painel, que é um app
+    // completo e sabe se orientar sozinho a partir da URL. A reserva NÃO é a
+    // raiz: ela virou a página de apresentação, e cair nela sem sinal daria a
+    // um jogador no meio do torneio uma landing em vez do painel dele.
+    return (await cache.match(req)) ?? (await cache.match("/painel")) ?? Response.error();
   }
 }
 
