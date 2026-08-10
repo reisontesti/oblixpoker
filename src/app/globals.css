@@ -414,17 +414,19 @@ html[data-tema-pronto] .placa-sutil {
    O estado escondido só vale quando há JavaScript para revelar de volta — sem
    ele, `com-js` não existe na raiz e o conteúdo nasce visível. Sem esta trava,
    quem desabilita scripts (e qualquer leitor que não execute os nossos) veria
-   uma página de duas mil pixels em branco. */
+   uma página de duas mil pixels em branco.
+
+   UMA classe só, e ela é REMOVIDA ao revelar. A primeira versão tinha um par
+   — `a-revelar` para esconder e `revelado` para mostrar — e o par não
+   funcionava: `html.com-js .a-revelar` tem mais especificidade que
+   `.revelado`, então o estado escondido vencia para sempre. A página inteira
+   foi ao ar em branco. Sem classe, sem regra: não há especificidade a
+   disputar. */
 @utility a-revelar {
   html.com-js & {
     opacity: 0;
     transform: translateY(20px);
   }
-}
-
-@utility revelado {
-  opacity: 1;
-  transform: none;
 }
 
 /* ═══ animação ═══════════════════════════════════════════════════════════ */

@@ -58,8 +58,8 @@ export function Revelar({ children, atraso = 0, className = "", como: Como = "di
   return (
     <Como
       ref={alvo}
-      className={`a-revelar transition-[opacity,transform] duration-[0.7s] ease-[var(--ease-out-quint)] ${
-        visivel ? "revelado" : ""
+      className={`transition-[opacity,transform] duration-[0.7s] ease-[var(--ease-out-quint)] ${
+        visivel ? "" : "a-revelar"
       } ${className}`}
       style={{ transitionDelay: `${atraso}ms` }}
     >
